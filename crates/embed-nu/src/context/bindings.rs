@@ -1,4 +1,5 @@
 use nu_cmd_lang::*;
+use nu_cmd_extra::*;
 use nu_command::*;
 use nu_protocol::engine::{EngineState, StateWorkingSet};
 use nu_cli::Print;
@@ -23,7 +24,6 @@ pub fn bind_core_commands(engine_state: &mut EngineState) -> CrateResult<()> {
         Const,
         Continue,
         Def,
-        // DefEnv,
         Describe,
         Do,
         Echo,
@@ -31,7 +31,7 @@ pub fn bind_core_commands(engine_state: &mut EngineState) -> CrateResult<()> {
         ExportAlias,
         ExportCommand,
         ExportDef,
-        // ExportDefEnv,
+        ExportEnv,
         ExportExtern,
         ExportUse,
         Extern,
@@ -61,6 +61,13 @@ pub fn bind_core_commands(engine_state: &mut EngineState) -> CrateResult<()> {
         Use,
         Version,
         While,
+        Scope,
+        ScopeCommands,
+        ScopeAliases,
+        ScopeExterns,
+        ScopeEngineStats,
+        ScopeModules,
+        ScopeVariables,
     )
 }
 
@@ -72,7 +79,6 @@ pub fn bind_debug_commands(engine_state: &mut EngineState) -> CrateResult<()> {
         Explain,
         Inspect,
         Metadata,
-        // Profile,
         TimeIt,
         View,
         ViewFiles,
@@ -265,15 +271,15 @@ pub fn bind_string_commands(engine_state: &mut EngineState) -> CrateResult<()> {
 pub fn bind_bit_commands(engine_state: &mut EngineState) -> CrateResult<()> {
     bind_commands! {
         engine_state,
-        // Bits,
-        // BitsAnd,
-        // BitsNot,
-        // BitsOr,
-        // BitsXor,
-        // BitsRotateLeft,
-        // BitsRotateRight,
-        // BitsShiftLeft,
-        // BitsShiftRight,
+        Bits,
+        BitsAnd,
+        BitsNot,
+        BitsOr,
+        BitsXor,
+        BitsRol,
+        BitsRor,
+        BitsShl,
+        BitsShr,
     }
 }
 
@@ -317,6 +323,7 @@ pub fn bind_platform_commands(engine_state: &mut EngineState) -> CrateResult<()>
         engine_state,
         Ansi,
         // AnsiGradient,
+        AnsiLink,
         AnsiStrip,
         Clear,
         Du,

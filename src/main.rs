@@ -11,7 +11,7 @@ fn main() {
     // eval a nu expression
     let pipeline = ctx
         .eval_raw(
-            "date now",
+            "scope commands | table",
             PipelineData::empty(),
         )
         .unwrap();
