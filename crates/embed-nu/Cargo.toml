@@ -1,0 +1,21 @@
+[package]
+name = "embed-nu"
+version = "0.8.0"
+edition = "2021"
+license = "Apache-2.0"
+repository = "https://github.com/Trivernis/embed-nu"
+description = "Embed the nu engine in your rust application"
+authors = ["trivernis <trivernis@proton.me>"]
+
+# See more keys and their definitions at https://doc.rust-lang.org/cargo/reference/manifest.html
+
+[dependencies]
+miette = "5.9.0"
+nu-cmd-lang = "0.80.0"
+nu-command = "0.80.0"
+nu-engine = "0.80.0"
+nu-parser = "0.80.0"
+nu-protocol = "0.80.0"
+paste = "1.0.12"
+rusty-value = { version = "0.6.0", features = ["derive"] }
+thiserror = "1.0.40"
