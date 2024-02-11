@@ -1,6 +1,7 @@
 use nu_cmd_lang::*;
 use nu_command::*;
 use nu_protocol::engine::{EngineState, StateWorkingSet};
+use nu_cli::Print;
 
 use crate::error::CrateResult;
 
@@ -219,6 +220,7 @@ pub fn bind_system_commands(engine_state: &mut EngineState) -> CrateResult<()> {
 pub fn bind_string_commands(engine_state: &mut EngineState) -> CrateResult<()> {
     bind_commands! {
         engine_state,
+            Print,
             Char,
             Decode,
             Encode,

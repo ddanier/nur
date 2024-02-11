@@ -11,6 +11,7 @@ authors = ["trivernis <trivernis@proton.me>"]
 
 [dependencies]
 miette = "7.0.0"
+nu-cli = "0.90.1"
 nu-cmd-lang = "0.90.1"
 nu-command = "0.90.1"
 nu-engine = "0.90.1"
