@@ -1,7 +1,10 @@
 [package]
-name = "n5"
+name = "nust"
+description = "Nu simple taskrunner (think of just in nu)"
 version = "0.1.0"
 edition = "2021"
+license = "MIT"
+authors = ["David Danier <david.danier@gmail.com>"]
 
 [dependencies]
 embed-nu = { version = "0.90.1", path = "crates/embed-nu" }
