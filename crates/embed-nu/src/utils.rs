@@ -27,6 +27,9 @@ pub fn parse_nu_script(engine_state: &mut EngineState, contents: String) -> Crat
 
         Ok(block)
     } else {
-        Err(CrateError::NuParseErrors(working_set.parse_errors))
+        // TODO: Fix this!
+        // Err(CrateError::NuParseErrors(working_set.parse_errors))
+        // Return nonsense for now - at least this works
+        Err(CrateError::FunctionNotFound(String::from("Actually this is a parse error.")))
     }
 }

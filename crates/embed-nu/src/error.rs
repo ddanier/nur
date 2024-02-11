@@ -2,7 +2,7 @@ use miette::Diagnostic;
 use nu_protocol::{ParseError, ShellError};
 use thiserror::Error;
 
-pub type CrateResult<T> = std::result::Result<T, CrateError>;
+pub type CrateResult<T> = Result<T, CrateError>;
 
 #[derive(Clone, Debug, Error, Diagnostic)]
 pub enum CrateError {
@@ -10,9 +10,10 @@ pub enum CrateError {
     #[diagnostic()]
     NuShellError(#[from] ShellError),
 
-    #[error("Parse Error {0:?}")]
-    #[diagnostic()]
-    NuParseErrors(#[related] Vec<ParseError>),
+    // TODO: Fix this!
+    // #[error("Parse Error {0:?}")]
+    // #[diagnostic()]
+    // NuParseErrors(#[related] Vec<ParseError>),
 
     #[error("Could not find the function {0}")]
     #[diagnostic()]

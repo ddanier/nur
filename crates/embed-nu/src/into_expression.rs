@@ -2,6 +2,7 @@ use nu_protocol::{
     ast::{Expr, Expression},
     Span, Value,
 };
+use nu_protocol::ast::RecordItem;
 
 use crate::{IntoValue, NewEmpty};
 
@@ -43,17 +44,15 @@ impl ValueIntoExpression for Value {
             Value::Date { val, .. } => Expr::DateTime(val),
             Value::String { val, .. } => Expr::String(val),
             Value::Record {
-                mut cols, mut vals, ..
+                val, ..
             } => {
-                let mut entries = Vec::new();
-
-                for _ in 0..cols.len() {
-                    let col = cols.remove(0).into_expression();
-                    let val = vals.remove(0).into_expression();
-                    entries.push((col, val));
-                }
-
-                Expr::Record(entries)
+                let records = val.into_iter().map(
+                    |(k, v)| RecordItem::Pair(
+                        k.into_expression(),
+                        v.into_expression(),
+                    )
+                ).collect();
+                Expr::Record(records)
             }
             Value::List { vals, .. } => {
                 let vals = vals.into_iter().map(|v| v.into_expression()).collect();
@@ -61,7 +60,7 @@ impl ValueIntoExpression for Value {
             }
             Value::Block { val, .. } => Expr::Block(val),
             Value::Nothing { .. } => Expr::Nothing,
-            Value::Error { error } => Expr::String(error.to_string()),
+            Value::Error { error, .. } => Expr::String(error.to_string()),
             Value::Binary { val, .. } => Expr::Binary(val),
             Value::CellPath { val, .. } => Expr::CellPath(val),
             _ => Expr::Nothing,

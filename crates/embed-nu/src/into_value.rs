@@ -1,4 +1,4 @@
-use nu_protocol::{Span, Value};
+use nu_protocol::{Span, Value, Record};
 use rusty_value::{Fields, HashableValue, RustyValue};
 
 use crate::utils::NewEmpty;
@@ -48,7 +48,7 @@ impl RustyIntoValue for Vec<Value> {
     fn into_value(self) -> Value {
         Value::List {
             vals: self,
-            span: Span::empty(),
+            internal_span: Span::empty(),
         }
     }
 }
@@ -61,7 +61,7 @@ impl RustyIntoValue for rusty_value::Value {
                 if let Fields::Unit = &s.fields {
                     Value::String {
                         val: s.name,
-                        span: Span::empty(),
+                        internal_span: Span::empty(),
                     }
                 } else {
                     s.fields.into_value()
@@ -71,24 +71,22 @@ impl RustyIntoValue for rusty_value::Value {
                 if let Fields::Unit = &e.fields {
                     Value::String {
                         val: e.variant,
-                        span: Span::empty(),
+                        internal_span: Span::empty(),
                     }
                 } else {
                     e.fields.into_value()
                 }
             }
             rusty_value::Value::Map(map) => {
-                let mut cols = Vec::new();
-                let mut vals = Vec::new();
+                let mut record = Record::new();
 
                 for (key, val) in map {
-                    cols.push(key.into_string());
-                    vals.push(val.into_value());
+                    record.push(key.into_string(), val.into_value());
                 }
+
                 Value::Record {
-                    cols,
-                    vals,
-                    span: Span::empty(),
+                    val: record,
+                    internal_span: Span::empty(),
                 }
             }
             rusty_value::Value::List(l) => {
@@ -96,11 +94,11 @@ impl RustyIntoValue for rusty_value::Value {
 
                 Value::List {
                     vals,
-                    span: Span::empty(),
+                    internal_span: Span::empty(),
                 }
             }
             rusty_value::Value::None => Value::Nothing {
-                span: Span::empty(),
+                internal_span: Span::empty(),
             },
         }
     }
@@ -113,15 +111,15 @@ impl RustyIntoValue for rusty_value::Primitive {
             rusty_value::Primitive::Float(f) => f.into_value(),
             rusty_value::Primitive::String(val) => Value::String {
                 val,
-                span: Span::empty(),
+                internal_span: Span::empty(),
             },
             rusty_value::Primitive::Char(val) => Value::String {
                 val: val.to_string(),
-                span: Span::empty(),
+                internal_span: Span::empty(),
             },
             rusty_value::Primitive::Bool(val) => Value::Bool {
                 val,
-                span: Span::empty(),
+                internal_span: Span::empty(),
             },
             rusty_value::Primitive::OsString(osstr) => osstr.to_string_lossy().into_value(),
         }
@@ -132,17 +130,14 @@ impl RustyIntoValue for rusty_value::Fields {
     fn into_value(self) -> Value {
         match self {
             rusty_value::Fields::Named(named) => {
-                let mut cols = Vec::with_capacity(named.len());
-                let mut vals = Vec::with_capacity(named.len());
+                let mut record = Record::new();
 
                 for (k, v) in named {
-                    cols.push(k);
-                    vals.push(v.into_value());
+                    record.push(k, v.into_value());
                 }
                 Value::Record {
-                    cols,
-                    vals,
-                    span: Span::empty(),
+                    val: record,
+                    internal_span: Span::empty(),
                 }
             }
             rusty_value::Fields::Unnamed(unnamed) => {
@@ -158,12 +153,12 @@ impl RustyIntoValue for rusty_value::Fields {
                 } else {
                     Value::List {
                         vals,
-                        span: Span::empty(),
+                        internal_span: Span::empty(),
                     }
                 }
             }
             rusty_value::Fields::Unit => Value::Nothing {
-                span: Span::empty(),
+                internal_span: Span::empty(),
             },
         }
     }
@@ -187,7 +182,7 @@ impl RustyIntoValue for rusty_value::Integer {
         };
         Value::Int {
             val,
-            span: Span::empty(),
+            internal_span: Span::empty(),
         }
     }
 }
@@ -201,7 +196,7 @@ impl RustyIntoValue for rusty_value::Float {
         };
         Value::Float {
             val,
-            span: Span::empty(),
+            internal_span: Span::empty(),
         }
     }
 }
