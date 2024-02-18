@@ -125,6 +125,17 @@ impl Context {
             .is_some()
     }
 
+    pub fn get_def<S: AsRef<str>>(
+        &self,
+        name: S,
+    ) -> Option<&Box<dyn Command>> {
+        if let Some(decl_id) = self.engine_state.find_decl(name.as_ref().as_bytes(), &vec![]) {
+            Some(self.engine_state.get_decl(decl_id))
+        } else {
+            None
+        }
+    }
+
     // pub fn call_def<S: AsRef<str>, I: IntoIterator<Item = A>, A: IntoArgument>(
     //     &mut self,
     //     name: S,

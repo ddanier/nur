@@ -11,9 +11,6 @@ use nu_utils::stdout_write_all_and_flush;
 use crate::commands::Nur;
 
 pub(crate) fn gather_commandline_args() -> (Vec<String>, String, Vec<String>) {
-    // Would be nice if we had a way to parse this. The first flags we see will be going to nushell
-    // then it'll be the script name
-    // then the args to the script
     let mut args_to_nur = Vec::from(["nur".into()]);
     let mut task_name = String::new();
     let mut args = std::env::args();
@@ -135,22 +132,6 @@ pub(crate) fn parse_commandline_args(
     );
     print!("{full_help}");
     std::process::exit(1);
-}
-
-pub(crate) fn show_nur_help(
-    engine_state: &mut EngineState,
-) {
-    let mut stack = Stack::new();
-
-    let full_help = get_full_help(
-        &Nur.signature(),
-        &Nur.examples(),
-        &engine_state,
-        &mut stack,
-        true,
-    );
-
-    let _ = std::panic::catch_unwind(move || stdout_write_all_and_flush(full_help));
 }
 
 #[derive(Debug)]

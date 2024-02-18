@@ -1,25 +1,35 @@
 # Example, just for fun
 
+# Just tell anybody or the "world" hello
 def "nur hello" [
-    name: string = "world",
+    name: string = "world"  # The name to say hello to
 ] {
     print $"hello ($name)"
 }
 
 # Actual useful tasks - doing the same as the justfile does
 
+# Run cargo
 def "nur cargo" [...args: string] {
     cargo ...$args
 }
 
+# Run cargo build
 def "nur build" [...args: string] {
     cargo "build" ...$args
 }
 
+# Run cargo run
 def "nur run" [...args: string] {
     cargo "run" ...$args
 }
 
+# Build a cargo release
 def "nur release" [] {
     cargo build --release
+}
+
+# Publish to crates.io
+def "nur publish" [] {
+    cargo publish
 }

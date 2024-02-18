@@ -93,15 +93,21 @@ fn main() -> Result<(), miette::ErrReport> {
         )?;
     }
 
+    // Initialize internal data
+    let task_def_name = format!("nur {}", task_name);
+
     // Handle help
     if parsed_nur_args.show_help {
         if task_name.len() == 0 {
             context.print_help(Box::new(Nur));
         } else {
-            context.eval_and_print(
-                format!("help nur {}", task_name),
-                PipelineData::empty(),
-            )?;
+            if let Some(&ref command) = context.get_def(task_def_name) {
+                context.print_help(command.clone());
+            } else {
+                return Err(miette::ErrReport::from(
+                    NurError::NurTaskNotFound(String::from(task_name))
+                ));
+            }
         }
 
         std::process::exit(0);
@@ -118,7 +124,6 @@ fn main() -> Result<(), miette::ErrReport> {
     }
 
     // Execute the task
-    let task_def_name = format!("nur {}", task_name);
     if !context.has_def(&task_def_name) {
         return Err(miette::ErrReport::from(
             NurError::NurTaskNotFound(String::from(task_name))
