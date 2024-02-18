@@ -7,10 +7,11 @@ mod nu_version;
 mod commands;
 
 use std::env;
+use std::io::BufReader;
 use nu_cmd_base::util::get_init_cwd;
 use crate::engine::init_engine_state;
 use crate::args::{gather_commandline_args, parse_commandline_args};
-use nu_protocol::{Span, NU_VARIABLE_ID, eval_const::create_nu_constant, PipelineData};
+use nu_protocol::{Span, NU_VARIABLE_ID, eval_const::create_nu_constant, PipelineData, RawStream, BufferedReader};
 use miette::Result;
 use crate::commands::Nur;
 use crate::context::Context;
@@ -26,7 +27,7 @@ fn main() -> Result<(), miette::ErrReport> {
     let mut engine_state = init_engine_state(&project_path)?;
 
     // Parse args
-    let (args_to_nur, task_name, _args_to_task) = gather_commandline_args();
+    let (args_to_nur, task_name, args_to_task) = gather_commandline_args();
     let parsed_nur_args = parse_commandline_args(&args_to_nur.join(" "), &mut engine_state)
         .unwrap_or_else(|_| std::process::exit(1));
 
@@ -71,12 +72,8 @@ fn main() -> Result<(), miette::ErrReport> {
         eprintln!("WARNING: Config files are not supported yet.")
     }
 
-    // Initialize input
-    // TODO: Allow usage of input streams?
-    let input = PipelineData::empty();
-
     // Set up the $nu constant before evaluating any files (need to have $nu available in them)
-    let nu_const = create_nu_constant(&engine_state, input.span().unwrap_or_else(Span::unknown))?;
+    let nu_const = create_nu_constant(&engine_state, PipelineData::empty().span().unwrap_or_else(Span::unknown))?;
     engine_state.set_variable_const_val(NU_VARIABLE_ID, nu_const);
 
     let mut context = Context::from(engine_state);
@@ -128,26 +125,48 @@ fn main() -> Result<(), miette::ErrReport> {
         std::process::exit(0);
     }
 
-    // Execute the task
+    // Check if requested task exists
     if !context.has_def(&task_def_name) {
         return Err(miette::ErrReport::from(
             NurError::NurTaskNotFound(String::from(task_name))
         ));
     }
+
+    // Prepare input data - if requested
+    let input = if parsed_nur_args.attach_stdin {
+        let stdin = std::io::stdin();
+        let buf_reader = BufReader::new(stdin);
+
+        PipelineData::ExternalStream {
+            stdout: Some(RawStream::new(
+                Box::new(BufferedReader::new(buf_reader)),
+                None,
+                Span::unknown(),
+                None,
+            )),
+            stderr: None,
+            exit_code: None,
+            span: Span::unknown(),
+            metadata: None,
+            trim_end_newline: false,
+        }
+    } else {
+        PipelineData::empty()
+    };
+
+    // Execute the task
     if parsed_nur_args.quiet_execution {
-        // TODO: Execute function + pass arguments
         context.eval(
-            &task_def_name,
-            PipelineData::empty(),
+            format!("{} {}", task_def_name, args_to_task.join(" ")),
+            input,
         )?;
     } else {
         println!("nur version {}", env!("CARGO_PKG_VERSION"));
         println!("Project path {:?}", project_path);
         println!("Executing task {}", task_name);
-        // TODO: Execute function + pass arguments
         context.eval_and_print(
-            &task_def_name,
-            PipelineData::empty(),
+            format!("{} {}", task_def_name, args_to_task.join(" ")),
+            input,
         )?;
         println!("Task exited ok");
     }

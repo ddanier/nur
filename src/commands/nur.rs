@@ -35,6 +35,11 @@ impl Command for Nur {
                 "Do not output anything but what tasks produce",
                 None,
             )
+            .switch(
+                "stdin",
+                "Attach stdin to nu function call",
+                None,
+            )
             .optional(
                 "task name",
                 SyntaxShape::Filepath,

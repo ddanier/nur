@@ -24,7 +24,6 @@ pub(crate) fn gather_commandline_args() -> (Vec<String>, String, Vec<String>) {
 
         let flag_value = match arg.as_ref() {
             "--config" => args.next().map(|a| escape_quote_string(&a)),
-            "--list" | "--quiet" => None,
             _ => None,
         };
 
@@ -79,6 +78,7 @@ pub(crate) fn parse_commandline_args(
             let config_file = call.get_flag_expr("config");
             let list_tasks = call.has_flag(engine_state, &mut stack, "list")?;
             let quiet_execution = call.has_flag(engine_state, &mut stack, "quiet")?;
+            let attach_stdin = call.has_flag(engine_state, &mut stack, "stdin")?;
             let show_help = call.has_flag(engine_state, &mut stack, "help")?;
 
             fn extract_contents(
@@ -117,6 +117,7 @@ pub(crate) fn parse_commandline_args(
                 config_file,
                 list_tasks,
                 quiet_execution,
+                attach_stdin,
                 show_help,
             });
         }
@@ -139,5 +140,6 @@ pub(crate) struct NurCliArgs {
     pub(crate) config_file: Option<Spanned<String>>,
     pub(crate) list_tasks: bool,
     pub(crate) quiet_execution: bool,
+    pub(crate) attach_stdin: bool,
     pub(crate) show_help: bool,
 }
