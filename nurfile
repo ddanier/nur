@@ -1,18 +1,25 @@
-def test-file-function [] {
-    print "test file ok"
-}
+# Example, just for fun
 
-def "nur do-something" [
-    --foo
-    --bar
+def "nur hello" [
+    name: string = "world",
 ] {
-    print "foo"
+    print $"hello ($name)"
 }
 
-def "nur foo" [] {
-    print "foo"
+# Actual useful tasks - doing the same as the justfile does
+
+def "nur cargo" [...args: string] {
+    cargo ...$args
 }
 
-def "nur bar" [] {
-    print "bar"
+def "nur build" [...args: string] {
+    cargo "build" ...$args
+}
+
+def "nur run" [...args: string] {
+    cargo "run" ...$args
+}
+
+def "nur release" [] {
+    cargo build --release
 }

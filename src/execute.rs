@@ -72,20 +72,20 @@ pub fn source<P: AsRef<Path>>(
     eval(engine_state, stack, contents, input)
 }
 
-pub fn get_var<S: AsRef<str>>(
-    engine_state: &EngineState,
-    stack: &mut Stack,
-    name: S,
-) -> Option<nu_protocol::Value> {
-    let name = name.as_ref();
-    let dollar_name = format!("${name}");
-    let var_id = engine_state.active_overlays(&vec![]).find_map(|o| {
-        o.vars
-            .get(dollar_name.as_bytes())
-            .or(o.vars.get(name.as_bytes()))
-    })?;
-    stack.get_var(*var_id, Span::new(0, 0)).ok()
-}
+// pub fn get_var<S: AsRef<str>>(
+//     engine_state: &EngineState,
+//     stack: &mut Stack,
+//     name: S,
+// ) -> Option<nu_protocol::Value> {
+//     let name = name.as_ref();
+//     let dollar_name = format!("${name}");
+//     let var_id = engine_state.active_overlays(&vec![]).find_map(|o| {
+//         o.vars
+//             .get(dollar_name.as_bytes())
+//             .or(o.vars.get(name.as_bytes()))
+//     })?;
+//     stack.get_var(*var_id, Span::new(0, 0)).ok()
+// }
 
 pub fn has_def<S: AsRef<str>>(
     engine_state: &EngineState,
@@ -96,7 +96,7 @@ pub fn has_def<S: AsRef<str>>(
         .is_some()
 }
 
-// pub fn call_fn<S: AsRef<str>, I: IntoIterator<Item = A>, A: IntoArgument>(
+// pub fn call_def<S: AsRef<str>, I: IntoIterator<Item = A>, A: IntoArgument>(
 //     engine_state: &EngineState,
 //     stack: &mut Stack,
 //     name: S,
