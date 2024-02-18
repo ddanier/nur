@@ -7,7 +7,7 @@ def "nur hello" [
     print $"hello ($name)"
 }
 
-# Actual useful tasks - doing the same as the justfile does
+# Actual useful tasks
 
 # Run cargo
 def "nur cargo" [...args: string] {
@@ -24,12 +24,33 @@ def "nur run" [...args: string] {
     cargo "run" ...$args
 }
 
-# Build a cargo release
-def "nur release" [] {
-    cargo build --release
+# Update version in Cargo.toml
+def "nur version" [
+    version: string
+] {
+    let parsed_version = $version | parse --regex '^(?P<major>[0-9]+)\.(?P<minor>[0-9]+)\.(?P<patch>[0-9]+)(-rc(?P<rc>[0-9]+))?$'
+    if ($parsed_version | is-empty) {
+        error make { msg: "No valid version string provided" }
+    }
+    cargo set-version $version
 }
 
 # Publish to crates.io
 def "nur publish" [] {
     cargo publish
+}
+
+# release
+def "nur release" [
+    --version: string
+] {
+    if ($version != null) {
+        print $"Updating to version ($version)"
+        nur version $version
+        git add Cargo.toml
+        git commit -m $"Release v($version)"
+        git tag $"v($version)"
+    }
+    print "Publishing to crates.io"
+    nur publish
 }
