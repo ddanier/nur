@@ -119,6 +119,7 @@ fn main() -> Result<(), miette::ErrReport> {
 
     // Handle list tasks
     if parsed_nur_args.list_tasks {
+        // TODO: Parse and handle commands without eval
         context.eval_and_print(
             r#"scope commands | where name starts-with "nur " and category == "default" | get name | each { |it| $it | str substring 4.. } | sort"#,
             PipelineData::empty(),
@@ -134,6 +135,7 @@ fn main() -> Result<(), miette::ErrReport> {
         ));
     }
     if parsed_nur_args.quiet_execution {
+        // TODO: Execute function + pass arguments
         context.eval(
             &task_def_name,
             PipelineData::empty(),
@@ -142,6 +144,7 @@ fn main() -> Result<(), miette::ErrReport> {
         println!("nur version {}", env!("CARGO_PKG_VERSION"));
         println!("Project path {:?}", project_path);
         println!("Executing task {}", task_name);
+        // TODO: Execute function + pass arguments
         context.eval_and_print(
             &task_def_name,
             PipelineData::empty(),
