@@ -1,21 +1,20 @@
 mod engine;
 mod args;
-mod execute;
+mod context;
 mod errors;
 mod path;
+mod nu_version;
+mod commands;
 
 use std::env;
-use nu_cli::gather_parent_env_vars;
 use nu_cmd_base::util::get_init_cwd;
-use engine::get_engine_state;
-use args::{gather_commandline_args, parse_commandline_args};
-use nu_protocol::{Value, Span, NU_VARIABLE_ID, eval_const::create_nu_constant, PipelineData, Spanned};
-use nu_std::load_standard_library;
+use crate::engine::init_engine_state;
+use crate::args::{gather_commandline_args, parse_commandline_args};
+use nu_protocol::{Span, NU_VARIABLE_ID, eval_const::create_nu_constant, PipelineData};
 use miette::Result;
-use execute::eval;
-use crate::args::show_nur_help;
+use crate::commands::Nur;
+use crate::context::Context;
 use crate::errors::NurError;
-use crate::execute::{has_def, source};
 use crate::path::find_project_path;
 
 fn main() -> Result<(), miette::ErrReport> {
@@ -24,26 +23,21 @@ fn main() -> Result<(), miette::ErrReport> {
     let project_path = find_project_path(&init_cwd)?;
 
     // Initialize nu engine state
-    let mut engine_state = get_engine_state();
+    let mut engine_state = init_engine_state(&project_path)?;
 
     // Parse args
     let (args_to_nur, task_name, args_to_task) = gather_commandline_args();
     let parsed_nur_args = parse_commandline_args(&args_to_nur.join(" "), &mut engine_state)
         .unwrap_or_else(|_| std::process::exit(1));
 
-    println!("nur args: {:?}", parsed_nur_args);
-    println!("task name: {:?}", task_name);
-    println!("task args: {:?}", args_to_task);
-    println!("init_cwd: {:?}", init_cwd);
-    println!("project_path: {:?}", project_path);
-
-    // Set some engine flags
-    engine_state.is_interactive = false;
-    engine_state.is_login = false;
-    engine_state.history_enabled = false;
+    // println!("nur args: {:?}", parsed_nur_args);
+    // println!("task name: {:?}", task_name);
+    // println!("task args: {:?}", args_to_task);
+    // println!("init_cwd: {:?}", init_cwd);
+    // println!("project_path: {:?}", project_path);
 
     // Init config
-    // TODO
+    // TODO: Setup config/env nu file?
     // engine_state.set_config_path("nur-config", path);
     // set_config_path(
     //     &mut engine_state,
@@ -61,7 +55,7 @@ fn main() -> Result<(), miette::ErrReport> {
     // );
 
     // Add include path in project
-    // TODO
+    // TODO: Add some include paths?
     // if let Some(include_path) = &parsed_nu_cli_args.include_path {
     //     let span = include_path.span;
     //     let vals: Vec<_> = include_path
@@ -73,40 +67,27 @@ fn main() -> Result<(), miette::ErrReport> {
     //     engine_state.add_env_var("NU_LIB_DIRS".into(), Value::list(vals, span));
     // }
 
-    // First, set up env vars as strings only
-    gather_parent_env_vars(&mut engine_state, &project_path);
-    engine_state.add_env_var(
-        "NU_VERSION".to_string(),
-        Value::string(env!("CARGO_PKG_VERSION"), Span::unknown()),
-    );
-
-    // Load std library
-    load_standard_library(&mut engine_state)?;
-
     // Initialize input
+    // TODO: Allow usage of input streams?
     let input = PipelineData::empty();
 
-    // Set up the $nu constant before evaluating config files (need to have $nu available in them)
+    // Set up the $nu constant before evaluating any files (need to have $nu available in them)
     let nu_const = create_nu_constant(&engine_state, input.span().unwrap_or_else(Span::unknown))?;
     engine_state.set_variable_const_val(NU_VARIABLE_ID, nu_const);
 
-    let mut stack = nu_protocol::engine::Stack::new();
+    let mut context = Context::from(engine_state);
 
     // Load task files
     let nurfile_path = project_path.join("nurfile");
     let local_nurfile_path = project_path.join("nurfile.local");
     if nurfile_path.exists() {
-        source(
-            &mut engine_state,
-            &mut stack,
+        context.source(
             nurfile_path,
             PipelineData::empty(),
         )?;
     }
     if local_nurfile_path.exists() {
-        source(
-            &mut engine_state,
-            &mut stack,
+        context.source(
             local_nurfile_path,
             PipelineData::empty(),
         )?;
@@ -115,18 +96,11 @@ fn main() -> Result<(), miette::ErrReport> {
     // Handle help
     if parsed_nur_args.show_help {
         if task_name.len() == 0 {
-            show_nur_help(&mut engine_state);
+            context.print_help(Box::new(Nur));
         } else {
-            eval(
-                &mut engine_state,
-                &mut stack,
+            context.eval_and_print(
                 format!("help nur {}", task_name),
                 PipelineData::empty(),
-            )?.print(
-                &engine_state,
-                &mut stack,
-                false,
-                false,
             )?;
         }
 
@@ -135,16 +109,9 @@ fn main() -> Result<(), miette::ErrReport> {
 
     // Handle list tasks
     if parsed_nur_args.list_tasks {
-        eval(
-            &mut engine_state,
-            &mut stack,
+        context.eval_and_print(
             r#"scope commands | where name starts-with "nur " and category == "default" | get name | each { |it| $it | str substring 4.. } | sort"#,
             PipelineData::empty(),
-        )?.print(
-            &engine_state,
-            &mut stack,
-            false,
-            false,
         )?;
 
         std::process::exit(0);
@@ -152,28 +119,24 @@ fn main() -> Result<(), miette::ErrReport> {
 
     // Execute the task
     let task_def_name = format!("nur {}", task_name);
-    if !has_def(&engine_state, &task_def_name) {
+    if !context.has_def(&task_def_name) {
         return Err(miette::ErrReport::from(
             NurError::NurTaskNotFound(String::from(task_name))
         ));
     }
-    if !parsed_nur_args.quiet_execution {
+    if parsed_nur_args.quiet_execution {
+        context.eval(
+            &task_def_name,
+            PipelineData::empty(),
+        )?;
+    } else {
         println!("nur version {}", env!("CARGO_PKG_VERSION"));
         println!("Project path {:?}", project_path);
         println!("Executing task {}", task_name);
-    }
-    eval(
-        &mut engine_state,
-        &mut stack,
-        &task_def_name,
-        PipelineData::empty(),
-    )?.print(
-        &engine_state,
-        &mut stack,
-        false,
-        false,
-    )?;
-    if !parsed_nur_args.quiet_execution {
+        context.eval_and_print(
+            &task_def_name,
+            PipelineData::empty(),
+        )?;
         println!("Task exited ok");
     }
 

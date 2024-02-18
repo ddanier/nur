@@ -3,12 +3,12 @@ use nu_parser::parse;
 use nu_parser::{escape_for_script_arg, escape_quote_string};
 use nu_protocol::report_error;
 use nu_protocol::{
-    ast::{Call, Expr, Expression, PipelineElement},
+    ast::{Expr, Expression, PipelineElement},
     engine::{Command, EngineState, Stack, StateWorkingSet},
-    Category, Example, IntoPipelineData, PipelineData, ShellError, Signature, Spanned, SyntaxShape,
-    Value,
+    ShellError, Spanned,
 };
 use nu_utils::stdout_write_all_and_flush;
+use crate::commands::Nur;
 
 pub(crate) fn gather_commandline_args() -> (Vec<String>, String, Vec<String>) {
     // Would be nice if we had a way to parse this. The first flags we see will be going to nushell
@@ -160,85 +160,3 @@ pub(crate) struct NurCliArgs {
     pub(crate) quiet_execution: bool,
     pub(crate) show_help: bool,
 }
-
-#[derive(Clone)]
-struct Nur;
-
-impl Command for Nur {
-    fn name(&self) -> &str {
-        "nur"
-    }
-
-    fn signature(&self) -> Signature {
-        let signature = Signature::build("nur")
-            .usage("nu run - simple task runner.")
-            .named(
-                "config",
-                SyntaxShape::String,
-                "path to config",
-                None,
-            )
-            .switch(
-                "version",
-                "output version number and exit",
-                None,
-            )
-            .switch(
-                "list",
-                "list available tasks and then just exit",
-                None,
-            )
-            .switch(
-                "quiet",
-                "Do not output anything but what tasks produce",
-                None,
-            )
-            .optional(
-                "task name",
-                SyntaxShape::Filepath,
-                "name of the task to run",
-            )
-            .rest(
-                "task args",
-                SyntaxShape::String,
-                "parameters to the executed task",
-            )
-            .category(Category::System);
-
-        signature
-    }
-
-    fn usage(&self) -> &str {
-        "nu run - simple task runner."
-    }
-
-    fn run(
-        &self,
-        engine_state: &EngineState,
-        stack: &mut Stack,
-        call: &Call,
-        _input: PipelineData,
-    ) -> Result<PipelineData, ShellError> {
-        Ok(Value::string(
-            get_full_help(&Nur.signature(), &Nur.examples(), engine_state, stack, true),
-            call.head,
-        )
-            .into_pipeline_data())
-    }
-
-    fn examples(&self) -> Vec<Example> {
-        vec![
-            Example {
-                description: "Execute a task",
-                example: "nur task-name",
-                result: None,
-            },
-            Example {
-                description: "List available tasks",
-                example: "nur --list",
-                result: None,
-            },
-        ]
-    }
-}
-

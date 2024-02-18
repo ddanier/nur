@@ -6,6 +6,10 @@ pub type NurResult<T> = Result<T, NurError>;
 
 #[derive(Clone, Debug, Error, Diagnostic)]
 pub enum NurError {
+    #[error("Init nu error {0}")]
+    #[diagnostic()]
+    NurInitError(String),
+
     #[error("IO Error {0}")]
     #[diagnostic()]
     NurIoError(String),
