@@ -20,10 +20,11 @@ it will change to the directory the file was found in and then `source` the file
 You can define tasks like this:
 
 ```
+# Just tell anybody or the "world" hello
 def "nur hello" [
-    name: string = "world",
+    name: string = "world"  # The name to say hello to
 ] {
-    print $"hello {name}"
+    print $"hello ($name)"
 }
 ```
 
@@ -32,7 +33,7 @@ The important bit is that you define your tasks as subcommands for "nur". If you
 You can also use `nur --help` to get some details on how to use `nur` and `nur --help hello` to
 see what this `hello` task accepts as parameters.
 
-You may also pass arguments to your `nur` tasks, like using `nur hello --name max` to pass "max"
+You may also pass arguments to your `nur` tasks, like using `nur hello bob` to pass "bob"
 as the name to the "hello" task. This support all parameter variants normal `nu` scripts could also
 handle. You amy use `nur --help <task-name>` to see the help for your defined command.
 
