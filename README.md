@@ -41,15 +41,15 @@ commands like you would normally do in your shell (like `npm ci` or something). 
 to any programming language, packaging system or anything. As in the end the `nurfile` if just a
 normal `nu` script you can put into this whatever you like.
 
-See `nu` [custom commands](https://www.nushell.sh/book/custom_commands.html) fir details on how to define
+See `nu` [custom commands](https://www.nushell.sh/book/custom_commands.html) for details on how to define
 tasks and at least read through the [nu quick tour](https://www.nushell.sh/book/quick_tour.html) to
 understand some basics about `nu` scripting.
 
 ## Why + some history
 
 For me `nur` is the next logical step after I created `b5`. `b5` is based on running bash code and
-allowing users to do this in a somewhat ordered matter. Initially `b5` was just some bash script,
-but then eventually I figured bash is just not enough to handle my requirements. SO I switched to
+allowing users to do this in a somewhat ordered matter. Initially `b5` even was just some bash script,
+but then eventually I figured bash is just not enough to handle my requirements. So I switched to
 using Python, but `b5` was still based on bash, as it would generate bash code and then just execute
 the code. One issue I always had with this approach was that again bash isn't that nice to write
 complex things without introducing issues everywhere. Look for example at parameter handling.
