@@ -4,6 +4,8 @@ description = "nu run - simple taskrunner"
 version = "0.1.0"
 edition = "2021"
 license = "MIT"
+homepage = "https://github.com/ddanier/nur"
+repository = "https://github.com/ddanier/nur"
 authors = ["David Danier <david.danier@gmail.com>"]
 
 [dependencies]
