@@ -32,8 +32,9 @@ The important bit is that you define your tasks as subcommands for "nur". If you
 You can also use `nur --help` to get some details on how to use `nur` and `nur --help hello` to
 see what this `hello` task accepts as parameters.
 
-*Note:* In the future you should be able to use something like `nur hello --name max` to pass parameters
-to your tasks - but this still needs to be implemented.
+You may also pass arguments to your `nur` tasks, like using `nur hello --name max` to pass "max"
+as the name to the "hello" task. This support all parameter variants normal `nu` scripts could also
+handle. You amy use `nur --help <task-name>` to see the help for your defined command.
 
 Your tasks then can do whatever you want them to do in `nu` script. This allows for very structured
 usage of for example docker to run/manage your project needs. But it can also just execute simple

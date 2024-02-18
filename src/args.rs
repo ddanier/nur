@@ -80,6 +80,7 @@ pub(crate) fn parse_commandline_args(
             let quiet_execution = call.has_flag(engine_state, &mut stack, "quiet")?;
             let attach_stdin = call.has_flag(engine_state, &mut stack, "stdin")?;
             let show_help = call.has_flag(engine_state, &mut stack, "help")?;
+            let debug_output = call.has_flag(engine_state, &mut stack, "debug")?;
 
             fn extract_contents(
                 expression: Option<&Expression>,
@@ -119,6 +120,7 @@ pub(crate) fn parse_commandline_args(
                 quiet_execution,
                 attach_stdin,
                 show_help,
+                debug_output,
             });
         }
     }
@@ -142,4 +144,5 @@ pub(crate) struct NurCliArgs {
     pub(crate) quiet_execution: bool,
     pub(crate) attach_stdin: bool,
     pub(crate) show_help: bool,
+    pub(crate) debug_output: bool,
 }

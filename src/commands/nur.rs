@@ -40,6 +40,11 @@ impl Command for Nur {
                 "Attach stdin to nu function call",
                 None,
             )
+            .switch(
+                "debug",
+                "Show debug details (DO NOT USE)",
+                None,
+            )
             .optional(
                 "task name",
                 SyntaxShape::Filepath,
