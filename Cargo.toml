@@ -6,14 +6,6 @@ edition = "2021"
 license = "MIT"
 authors = ["David Danier <david.danier@gmail.com>"]
 
-#[dependencies]
-#embed-nu = { version = "0.90.1", path = "crates/embed-nu" }
-#
-#[workspace]
-#members = [
-#    "crates/embed-nu",
-#]
-
 [dependencies]
 miette = { version = "5.10", features = ["fancy-no-backtrace"] }
 nu-cli = "0.90.1"
