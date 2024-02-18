@@ -1,15 +1,36 @@
 [package]
-name = "nust"
-description = "Nu simple taskrunner (think of just in nu)"
+name = "nur"
+description = "nu run - simple taskrunner"
 version = "0.1.0"
 edition = "2021"
 license = "MIT"
 authors = ["David Danier <david.danier@gmail.com>"]
 
-[dependencies]
-embed-nu = { version = "0.90.1", path = "crates/embed-nu" }
+#[dependencies]
+#embed-nu = { version = "0.90.1", path = "crates/embed-nu" }
+#
+#[workspace]
+#members = [
+#    "crates/embed-nu",
+#]
 
-[workspace]
-members = [
-    "crates/embed-nu",
-]
+[dependencies]
+miette = { version = "5.10", features = ["fancy-no-backtrace"] }
+nu-cli = "0.90.1"
+nu-cmd-base = "0.90.1"
+nu-cmd-dataframe = { version = "0.90.1", optional = true }
+nu-cmd-extra = { version = "0.90.1", optional = true }
+nu-cmd-lang = "0.90.1"
+nu-command = "0.90.1"
+nu-engine = "0.90.1"
+nu-explore = "0.90.1"
+nu-parser = "0.90.1"
+nu-protocol = "0.90.1"
+nu-std = "0.90.1"
+nu-utils = "0.90.1"
+thiserror = "1.0.57"
+
+[features]
+default = ["extra", "dataframe"]
+extra = ["dep:nu-cmd-extra", "nu-cmd-lang/extra"]
+dataframe = ["dep:nu-cmd-dataframe", "nu-cmd-dataframe/dataframe"]

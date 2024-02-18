@@ -1,0 +1,18 @@
+def test-file-function [] {
+    print "test file ok"
+}
+
+def "nur do-something" [
+    --foo
+    --bar
+] {
+    print "foo"
+}
+
+def "nur foo" [] {
+    print "foo"
+}
+
+def "nur bar" [] {
+    print "bar"
+}
