@@ -26,13 +26,13 @@ fn main() -> Result<(), miette::ErrReport> {
     let mut engine_state = init_engine_state(&project_path)?;
 
     // Parse args
-    let (args_to_nur, task_name, args_to_task) = gather_commandline_args();
+    let (args_to_nur, task_name, _args_to_task) = gather_commandline_args();
     let parsed_nur_args = parse_commandline_args(&args_to_nur.join(" "), &mut engine_state)
         .unwrap_or_else(|_| std::process::exit(1));
 
     // println!("nur args: {:?}", parsed_nur_args);
     // println!("task name: {:?}", task_name);
-    // println!("task args: {:?}", args_to_task);
+    // println!("task args: {:?}", _args_to_task);
     // println!("init_cwd: {:?}", init_cwd);
     // println!("project_path: {:?}", project_path);
 
@@ -66,6 +66,10 @@ fn main() -> Result<(), miette::ErrReport> {
     //
     //     engine_state.add_env_var("NU_LIB_DIRS".into(), Value::list(vals, span));
     // }
+
+    if let Some(_) = parsed_nur_args.config_file {
+        eprintln!("WARNING: Config files are not supported yet.")
+    }
 
     // Initialize input
     // TODO: Allow usage of input streams?

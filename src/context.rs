@@ -1,11 +1,10 @@
-use nu_protocol::{ast::Block, engine::{EngineState, Stack, StateWorkingSet}, Example, PipelineData, Signature};
+use nu_protocol::{ast::Block, engine::{EngineState, Stack, StateWorkingSet}, PipelineData};
 use crate::errors::{NurResult, NurError};
 use std::fs;
 use std::path::Path;
 use nu_engine::get_full_help;
 use nu_protocol::engine::Command;
 use nu_utils::stdout_write_all_and_flush;
-use crate::commands::Nur;
 
 #[derive(Clone)]
 pub struct Context {
