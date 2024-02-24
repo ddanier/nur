@@ -166,7 +166,7 @@ fn main() -> Result<(), miette::ErrReport> {
     // Execute the task
     let full_task_call = format!("{} {}", task_def_name, args_to_task.join(" "));
     if parsed_nur_args.debug_output {
-        eprintln!("full fask call: {}", full_task_call);
+        eprintln!("full task call: {}", full_task_call);
     }
     if parsed_nur_args.quiet_execution {
         context.eval(
