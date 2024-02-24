@@ -33,11 +33,9 @@ impl Context {
 
             Ok(block)
         } else {
-            if let Some(_) = file_path {
-                if let Some(err) = working_set.parse_errors.first() {
-                    report_error(&working_set, err);
-                    std::process::exit(1);
-                }
+            if let Some(err) = working_set.parse_errors.first() {
+                report_error(&working_set, err);
+                std::process::exit(1);
             }
 
             Err(NurError::NurParseErrors(working_set.parse_errors))
