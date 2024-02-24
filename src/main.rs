@@ -100,6 +100,17 @@ fn main() -> Result<(), miette::ErrReport> {
         )?;
     }
 
+    // Handle list tasks
+    if parsed_nur_args.list_tasks {
+        // TODO: Parse and handle commands without eval
+        context.eval_and_print(
+            r#"scope commands | where name starts-with "nur " and category == "default" | get name | each { |it| $it | str substring 4.. } | sort"#,
+            PipelineData::empty(),
+        )?;
+
+        std::process::exit(0);
+    }
+
     // Initialize internal data
     let task_def_name = format!("nur {}", task_name);
     if parsed_nur_args.debug_output {
@@ -107,7 +118,7 @@ fn main() -> Result<(), miette::ErrReport> {
     }
 
     // Handle help
-    if parsed_nur_args.show_help {
+    if parsed_nur_args.show_help || task_name.len() == 0 {
         if task_name.len() == 0 {
             context.print_help(Box::new(Nur));
         } else {
@@ -119,17 +130,6 @@ fn main() -> Result<(), miette::ErrReport> {
                 ));
             }
         }
-
-        std::process::exit(0);
-    }
-
-    // Handle list tasks
-    if parsed_nur_args.list_tasks {
-        // TODO: Parse and handle commands without eval
-        context.eval_and_print(
-            r#"scope commands | where name starts-with "nur " and category == "default" | get name | each { |it| $it | str substring 4.. } | sort"#,
-            PipelineData::empty(),
-        )?;
 
         std::process::exit(0);
     }
