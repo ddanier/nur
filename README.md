@@ -2,14 +2,14 @@
 
 `nur` is a simple, yet very powerful task runner. It borrows ideas from [`b5`](https://github.com/team23/b5)
 and [`just`](https://github.com/casey/just), but uses [`nu` scripting](https://www.nushell.sh/book/programming_in_nu.md)
-to define the tasks. This allows for very powerful, yet well structured tasks.
+to define the tasks. This allows for very powerful, yet well-structured tasks.
 
 ## Warning / disclaimer
 
 In its current state `nur` is more or less a **proof of concept**. I wanted to put it out there, so
 I may receive some feedback. But I am not using this in some production setup myself yet. So feel
 free to poke around with this, but be aware this is far from being finished, stable or anything.
-Also this is my first ever rust project and parts of the code are currently more like helping me
+Also, this is my first ever rust project and parts of the code are currently more like helping me
 out to get to know rust. Meaning: There might be dragons!
 
 ## Usage example
@@ -34,18 +34,18 @@ You can also use `nur --help` to get some details on how to use `nur` and `nur -
 see what this `hello` task accepts as parameters.
 
 You may also pass arguments to your `nur` tasks, like using `nur hello bob` to pass "bob"
-as the name to the "hello" task. This support all parameter variants normal `nu` scripts could also
-handle. You amy use `nur --help <task-name>` to see the help for your defined command.
+as the name to the "hello" task. This supports all parameter variants normal `nu` scripts could also
+handle. You may use `nur --help <task-name>` to see the help for an available command.
 
 Your tasks then can do whatever you want them to do in `nu` script. This allows for very structured
-usage of for example docker to run/manage your project needs. But it can also just execute simple
-commands like you would normally do in your shell (like `npm ci` or something). `nur` is not tight
-to any programming language, packaging system or anything. As in the end the `nurfile` if just a
+usage of for example docker to run/manage your project needs. But it can also execute simple commands
+like you would normally do in your shell (like `npm ci` or something). `nur` is not tight to any
+programming language, packaging system or anything. As in the end the `nurfile` is basically a
 normal `nu` script you can put into this whatever you like.
 
 See `nu` [custom commands](https://www.nushell.sh/book/custom_commands.html) for details on how to define
 tasks and at least read through the [nu quick tour](https://www.nushell.sh/book/quick_tour.html) to
-understand some basics about `nu` scripting.
+understand some basics and benefits about `nu` scripting.
 
 ## Why + some history
 
@@ -57,22 +57,22 @@ the code. One issue I always had with this approach was that again bash isn't th
 complex things without introducing issues everywhere. Look for example at parameter handling.
 
 Then along came `just`, which did implement its own language you could use to write your `justfile`.
-This language was inspired by what a `Makefile` would look like, still without the issued `Makefile`'s
-impose when using those as your task runner. Also it did include a very nice way to define task arguments,
+This language was inspired by what a `Makefile` would look like, still without the issues `Makefile`'s
+impose when using those as your task runner. Also, it did include a very nice way to define task arguments,
 parse those, care about validation etc. Still the way `just` works is either to execute the task line
 by line (and not having any context between those commands) or define some script language to execute
 the full command (meaning using something like bash again). So `just` - at least for me - is a great
 step forward, but still not what I had in mind when creating `b5` and what I would like to do with a
 task runner.
 
-Then I came across `nu`, especially the nu shell. This did become my default shell after a while and
-I am using it as of now. `nu` feels nicely designed, has a very structured way to execute command and
-also handle their "response" data (stdout/err) - as everything is structured data here. This is way
-better than the original UNIX approach of always parsing text data. Also `nu` allows you to have simple
+Then I came across `nu`, especially the nu shell. This did become my default shell after a while, and
+I am using it as of now. `nu` feels nicely designed, has a very structured way to execute commands and
+also handle their "response" data (stdout/err) - as everything is structured data there. This is way
+better than the original UNIX approach of always passing text data. Also `nu` allows you to have simple
 functions, that - as with `just` - handle argument parsing for you. So this did look like the perfect
 combination for something like a task runner.
 
-Of course you could just define some `nu` functions to completely create a task runner, that would
+Of course, you could just define some `nu` functions to completely create a task runner and that would
 already be better than `b5` or `just`. But this would also mean that every dev using this task runner
 would need to switch to `nu` first. So I decided to try the hard route and create my own rust based
 cli tool that would parse a `nu` script and then execute tasks defined in this script.
@@ -88,7 +88,7 @@ superpowers inside your defined tasks.
 decided for just "nur" as:
 * `nur` is very fast to type (one less character 💪)
 * `nur` is the reverse of `run`, which I like as a side effect 🥳
-* and then as a nice addon: You could translate "just" to "nur" in german 😂
+* and then as a nice and also weird side effect: You could translate "just" to "nur" in german 😂
 
 ## Contributing
 
