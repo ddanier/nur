@@ -195,7 +195,7 @@ Getting the `docker ps` text data input `nu` can for example be done using `dock
 for more possible input formats.
 
 To get the first container matching using the image `some-name` you could use this command:  
-`docker ps | from ssv | where IMAGE == "some-name" | get "CONTAINER ID"`
+`docker ps | from ssv | where IMAGE == "some-name" | get "CONTAINER ID" | first`
 
 This is using the [where command](https://www.nushell.sh/commands/docs/where.html) to match only
 a single row and then the [get command](https://www.nushell.sh/commands/docs/get.html) to reduce the
