@@ -42,7 +42,7 @@ def "nur publish" [] {
 
 # release
 def "nur release" [
-    --version: string
+    version: string
 ] {
     if ($version != null) {
         print $"Updating to version ($version)"
