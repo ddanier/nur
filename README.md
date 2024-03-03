@@ -51,6 +51,9 @@ understand some basics and benefits about `nu` scripting.
 As of now `nur` is not available in common package managers. This is however no issue as `cargo`
 allows you to install packages into your own user directory.
 
+**Note:** You need to have `cargo` installed for this to work. See [cargo install docs](https://doc.rust-lang.org/cargo/getting-started/installation.html)
+for details on getting `cargo` running.
+
 Just run `cargo install nur` to install `nur` for your current user. The `nur` binary will be
 added in `$HOME/.cargo/bin` (or `$"($env.HOME)/.cargo/bin"` in `nu` shell). Make sure to add
 this to `$PATH` (or `$env.PATH` in `nu` shell).
