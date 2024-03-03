@@ -6,11 +6,10 @@ to define the tasks. This allows for very powerful, yet well-structured tasks.
 
 ## Warning / disclaimer
 
-In its current state `nur` is more or less a **proof of concept**. I wanted to put it out there, so
-I may receive some feedback. But I am not using this in some production setup myself yet. So feel
-free to poke around with this, but be aware this is far from being finished, stable or anything.
-Also, this is my first ever rust project and parts of the code are currently more like helping me
-out to get to know rust. Meaning: There might be dragons!
+In its current state `nur` is more or less a **beta** software. I wanted to put it out there, so I may
+receive some feedback. But I am only just starting using this in some production setup myself.
+So feel free to poke around with this, but be aware this is far from being finished or anything.
+Meaning: There might be dragons!
 
 ## Usage example
 
@@ -47,6 +46,29 @@ See `nu` [custom commands](https://www.nushell.sh/book/custom_commands.html) for
 tasks and at least read through the [nu quick tour](https://www.nushell.sh/book/quick_tour.html) to
 understand some basics and benefits about `nu` scripting.
 
+## Installing `nur`
+
+As of now `nur` is not available in common package managers. This is however no issue as `cargo`
+allows you to install packages into your own user directory.
+
+Just run `cargo install nur` to install `nur` for your current user. The `nur` binary will be
+added in `$HOME/.cargo/bin` (or `$"($env.HOME)/.cargo/bin"` in `nu` shell). Make sure to add
+this to `$PATH` (or `$env.PATH` in `nu` shell).
+
+Shell example (like Bash, zsh, ...):
+```
+cargo install nur
+export PATH="$HOME/.cargo/bin:$PATH"  # put this into your .bashrc, .zshrc or similar
+nur --version
+```
+
+`nu` shell example:
+```
+cargo install nur
+$env.PATH = ($env.PATH | split row (char esep) | prepend [$'($nu.home-path)/bin'])  # put this into $nu.env-path
+nur --version
+```
+
 ## Working with `nur`
 
 As shown above you can use subcommands to `"nur"` to add your tasks. This section will give
@@ -76,25 +98,27 @@ each developer to have their own additional set of tasks.
 ### Adding some arguments to your tasks
 
 I highly recommend reading `nu` [custom commands](https://www.nushell.sh/book/custom_commands.html) for details, but I will try to show you the
-most important bits right here. I will use the term "`nur` tasks" to talk about "`nu` commands" in
+most important bits right here. I will use the term "`nur` tasks" to talk about "`nu` (sub)commands" in
 the following section.
 
 `nur` tasks can receive three different kinds of arguments:
 * Named, positional arguments: `def "nur taskname" [argument1, argument2] { ... }`
   - Adding a `?` after the parameter name makes it optional
-  - Above example provides the variables `$argument1` and `$argument2`
-* Flags as parameters: `def "nur taskname" [--argument1: string, --argument2: int] { ... }`
+  - Above example provides the variables `$argument1` and `$argument2` in the task
+* Flags as parameters: `def "nur taskname" [--argument1: string, --argument-number2: int] { ... }`
   - If you want to have named flags that can actually receive any values, you need to add a type
-  - Flags are always optional
+    (see below for typing)
+  - Flags are always optional, default value will be `null` unless defined otherwise
+    (see below for default values)
   - Flags will provide variables names without the leading `--`
   - Flags will be available in your task code as variables with all `-` replaced by `_`
-  - Above example provides the variables `$argument1` and `$argument2`
+  - Above example provides the variables `$argument1` and `$argument_number2` in the task
 * Boolean flags: `def "nur taskname" [--switch] { ... }`
-  - Boolean flags may NOT be typed
+  - Boolean flags must NOT be typed
   - Those can only receive the values `true`/`false`, with `false` being the default
-  - Above example provides the variable `$switch`
+  - Above example provides the variable `$switch` in the task
 * Rest parameters might consume the rest of the arguments: `def "nur taskname" [...rest] { ... }`
-  - Above example provides the variable `$rest`
+  - Above example provides the variable `$rest` in the task
 
 Arguments can (and should) be typed, you can use `argument_name: type` for doing so. A typed
 argument could look like this:  
@@ -110,14 +134,21 @@ An example using a default value could look like this:
 You may add docs by adding commands to your `nur` tasks. See the usage example above and
 the `nu` [command documentation](https://www.nushell.sh/book/custom_commands.html#documenting-your-command) section.
 
-### Calling system commands from nur
+Basic rule is that the commend right above your task will be used as a description for that task.
+Comments next to any argument will be used to document that argument.
+
+### Calling system commands from `nur`
 
 If you want to run external commands you might run into the issue that `nu` itself provides some
 [builtin commands](https://www.nushell.sh/commands/) that might match the name of the command
 you want to run. This for example is the case for `sort`, where `nu` has it's own version (see
-[sort command](https://www.nushell.sh/commands/docs/sort.html)). Most of the times it makes sense
+[sort command](https://www.nushell.sh/commands/docs/sort.html)). Most of the time it makes sense
 to use the versions `nu` provides as those implement all the [pipeline improvements](https://www.nushell.sh/book/pipelines.html) of `nu`.
-If you want to call the external command use `^sort` instead of `sort` in your `nur` tasks.
+If you want to call the external command and not the builton function by `nu` use `^sort` instead
+of `sort` in your `nur` tasks.
+
+The same rule applies to your user defined functions, you would for example provide a function
+named `grep` (`def grep [] { ... }`) which could call the `grep` command using `^grep`.
 
 ### Provide `nur` tasks for running normal shell commands
 
@@ -134,7 +165,48 @@ def --wrapped "nur poetry" [...args] {
 The important bit is using `--wrapped`, so the `nu` parser will not try to match flags starting with
 `-` into your `nur` task.
 
-## Why + some history
+See the [docs for def](https://www.nushell.sh/commands/docs/def.html) for some more details.
+
+## Some notes about pipelines and how `nu` handles those
+
+Normal UNIX shells always use text to pass data from `stdout` (or `stderr`) to the next command via
+`stdin`. This is pretty easy to implement and a very slim contract to follow. `nu` however works quite
+different from this. Instead of passing test when using pipelines it tried to use structured data -
+think of this like passing JSON between the different command. This increases the flexibility and
+structured way to work with the data in a great way.
+
+For example getting the ID of a running container in docker would look somewhat like this in a normal
+UNIX shell:  
+`docker ps | grep some-name | grep -n 1 | awk '{print $1}'`
+
+This works for most of the cases, but might produce errors for example of a container named
+`this-also-contains-some-name-in-its-name` exists. This issue exists as we are parsing
+text data, not some actual structured data. So having the name anywhere in a line will result in
+that line being used. (Note: I know about `docker ps --filter ...`, this is just to explain the
+overall issue of parsing text data)
+
+`nu` works on structured data and provides commands to filter, sort or restructure that data in
+any way you like. Also `nu` provides mechanics to import text data into this structured format.
+Getting the `docker ps` text data input `nu` can for example be done using `docker ps | from ssv`
+("ssv" stands for "space-separated values"), see the [command `from`](https://www.nushell.sh/commands/docs/from.html)
+for more possible input formats.
+
+To get the first container matching using the image `some-name` you could use this command:  
+`docker ps | from ssv | where IMAGE == "some-name" | get "CONTAINER ID"`
+
+This is using the [where command](https://www.nushell.sh/commands/docs/where.html) to match only
+a single row and then the [get command](https://www.nushell.sh/commands/docs/get.html) to reduce the
+row to just one column. There are also many more commands to work with structured data.
+
+This way of working with command data in a very structured form is very much superior to
+how normal shells used to work. This is especially good when you are creating more complex
+scripts and thus also true for the tasks you will write in your task runner. This is why I did
+choose `nu` for creating `nur`.
+
+I recommend reading [thinking in nu](https://www.nushell.sh/book/thinking_in_nu.html#nushell-isn-t-bash) to
+get a grasp about this concept and start using `nu` script in `nur` in a very structured way.
+
+## Why `nur` + some history
 
 For me `nur` is the next logical step after I created `b5`. `b5` is based on running bash code and
 allowing users to do this in a somewhat ordered matter. Initially `b5` even was just some bash script,
