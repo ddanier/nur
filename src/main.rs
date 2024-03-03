@@ -11,8 +11,9 @@ use std::io::BufReader;
 use nu_cmd_base::util::get_init_cwd;
 use crate::engine::init_engine_state;
 use crate::args::{gather_commandline_args, parse_commandline_args};
-use nu_protocol::{Span, NU_VARIABLE_ID, eval_const::create_nu_constant, PipelineData, RawStream, BufferedReader};
+use nu_protocol::{Span, NU_VARIABLE_ID, eval_const::create_nu_constant, PipelineData, RawStream, BufferedReader, Value, Record, Type};
 use miette::Result;
+use nu_protocol::engine::StateWorkingSet;
 use crate::commands::Nur;
 use crate::context::Context;
 use crate::errors::NurError;
@@ -78,6 +79,31 @@ fn main() -> Result<(), miette::ErrReport> {
     let nu_const = create_nu_constant(&engine_state, PipelineData::empty().span().unwrap_or_else(Span::unknown))?;
     engine_state.set_variable_const_val(NU_VARIABLE_ID, nu_const);
 
+    // Add $nur constant record (like $nu)
+    let mut nur_record = Record::new();
+    nur_record.push("run-path", Value::string(
+        String::from(init_cwd.to_str().unwrap()),
+        Span::unknown(),
+    ));
+    nur_record.push("project-path", Value::string(
+        String::from(project_path.to_str().unwrap()),
+        Span::unknown(),
+    ));
+    nur_record.push("task-name", Value::string(
+        &task_name,
+        Span::unknown(),
+    ));
+    let mut working_set = StateWorkingSet::new(&engine_state);
+    let nur_var_id = working_set.add_variable(
+        "nur".as_bytes().into(),
+        Span::unknown(),
+        Type::Record(vec![]),
+        false,
+    );
+    engine_state.merge_delta(working_set.render())?;
+    engine_state.set_variable_const_val(nur_var_id, Value::record(nur_record, Span::unknown()));
+
+    // Switch to using context
     let mut context = Context::from(engine_state);
 
     // Load task files

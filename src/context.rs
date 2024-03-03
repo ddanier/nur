@@ -14,7 +14,7 @@ pub struct Context {
 }
 
 impl Context {
-    fn parse_nu_script(
+    fn _parse_nu_script(
         &mut self,
         file_path: Option<&str>,
         contents: String,
@@ -70,7 +70,7 @@ impl Context {
             return Ok(());
         }
 
-        let block = self.parse_nu_script(
+        let block = self._parse_nu_script(
             file_path,
             str_contents,
         )?;
@@ -115,20 +115,6 @@ impl Context {
         self._eval(file_path.as_ref().to_str(), contents, input, false)
     }
 
-    // pub fn get_var<S: AsRef<str>>(
-    //     &mut self,
-    //     name: S,
-    // ) -> Option<nu_protocol::Value> {
-    //     let name = name.as_ref();
-    //     let dollar_name = format!("${name}");
-    //     let var_id = self.engine_state.active_overlays(&vec![]).find_map(|o| {
-    //         o.vars
-    //             .get(dollar_name.as_bytes())
-    //             .or(o.vars.get(name.as_bytes()))
-    //     })?;
-    //     self.stack.get_var(*var_id, Span::new(0, 0)).ok()
-    // }
-
     pub fn has_def<S: AsRef<str>>(
         &self,
         name: S,
@@ -148,38 +134,6 @@ impl Context {
             None
         }
     }
-
-    // pub fn call_def<S: AsRef<str>, I: IntoIterator<Item = A>, A: IntoArgument>(
-    //     &mut self,
-    //     name: S,
-    //     args: I,
-    // ) -> NurResult<PipelineData> {
-    //     let args = args
-    //         .into_iter()
-    //         .map(|a| a.into_argument().into_nu_argument())
-    //         .collect::<Vec<_>>();
-    //
-    //     let decl_id = self.engine_state
-    //         .find_decl(name.as_ref().as_bytes(), &vec![])
-    //         .ok_or_else(|| Err(()))?;  // function not found
-    //     let call = Call {
-    //         decl_id,
-    //         head: Span::empty(),
-    //         arguments: args,
-    //         redirect_stdout: true,
-    //         redirect_stderr: true,
-    //         parser_info: HashMap::new(),
-    //     };
-    //
-    //     let data = nu_engine::eval_call(
-    //         &self.engine_state,
-    //         &mut self.stack,
-    //         &call,
-    //         PipelineData::empty(),
-    //     )?;
-    //
-    //     Ok(data)
-    // }
 
     pub(crate) fn print_help(
         &mut self,
