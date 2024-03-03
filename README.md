@@ -47,6 +47,93 @@ See `nu` [custom commands](https://www.nushell.sh/book/custom_commands.html) for
 tasks and at least read through the [nu quick tour](https://www.nushell.sh/book/quick_tour.html) to
 understand some basics and benefits about `nu` scripting.
 
+## Working with `nur`
+
+As shown above you can use subcommands to `"nur"` to add your tasks. This section will give
+you some more details and some hints how to do this in the best way possible.
+
+### About the `nurfile`
+
+Your tasks are defined in a file called `nurfile`. This file is a normal `nu` script and may
+use `nu` commands to define `nur` tasks. All tasks must be defined as subcommands to `"nur"`, you
+still will be able to define any other commands and use those as helpers in your tasks. Only
+subcommands to `"nur"` will be exposed by running `nur`.
+
+In addition you may add a file called `nurfile.local` to define personal, additional tasks. I
+recommend adding the `nurfile` to git, while `nurfile.local` should be ignored. This allows
+each developer to have their own additional set of tasks.
+
+### Some basics that `nur` provides
+
+* `nur` tasks will always be run inside the directory the file `nurfile` was found in. If you 
+  place a `nurfile` in your project root (git root) you will be able to call tasks from anywhere
+  inside the project.
+* `nur` will provide the internal state and config in the variable `$nur`, containing:
+  - `$nur.run-path`: The path `nur` was executed in
+  - `$nur.project-path`: The path `nur` executes the tasks in, this means the path the `nurfile` was found
+  - `$nur.task-name`: The name of the task being executed, if any
+
+### Adding some arguments to your tasks
+
+I highly recommend reading `nu` [custom commands](https://www.nushell.sh/book/custom_commands.html) for details, but I will try to show you the
+most important bits right here. I will use the term "`nur` tasks" to talk about "`nu` commands" in
+the following section.
+
+`nur` tasks can receive three different kinds of arguments:
+* Named, positional arguments: `def "nur taskname" [argument1, argument2] { ... }`
+  - Adding a `?` after the parameter name makes it optional
+  - Above example provides the variables `$argument1` and `$argument2`
+* Flags as parameters: `def "nur taskname" [--argument1: string, --argument2: int] { ... }`
+  - If you want to have named flags that can actually receive any values, you need to add a type
+  - Flags are always optional
+  - Flags will provide variables names without the leading `--`
+  - Flags will be available in your task code as variables with all `-` replaced by `_`
+  - Above example provides the variables `$argument1` and `$argument2`
+* Boolean flags: `def "nur taskname" [--switch] { ... }`
+  - Boolean flags may NOT be typed
+  - Those can only receive the values `true`/`false`, with `false` being the default
+  - Above example provides the variable `$switch`
+* Rest parameters might consume the rest of the arguments: `def "nur taskname" [...rest] { ... }`
+  - Above example provides the variable `$rest`
+
+Arguments can (and should) be typed, you can use `argument_name: type` for doing so. A typed
+argument could look like this:  
+`def "nur taskname" [argument1: string, argument2: int] { ... }`  
+(see [parameter types](https://www.nushell.sh/book/custom_commands.html#parameter-types) for a full list of available types)
+
+Also arguments can have a default value, you can use `argument_name = "value"` to set the default value.
+An example using a default value could look like this:  
+`def "nur taskname" [argument1 = "value", argument2 = 10] { ... }`
+
+### Adding docs to your command
+
+You may add docs by adding commands to your `nur` tasks. See the usage example above and
+the `nu` [command documentation](https://www.nushell.sh/book/custom_commands.html#documenting-your-command) section.
+
+### Calling system commands from nur
+
+If you want to run external commands you might run into the issue that `nu` itself provides some
+[builtin commands](https://www.nushell.sh/commands/) that might match the name of the command
+you want to run. This for example is the case for `sort`, where `nu` has it's own version (see
+[sort command](https://www.nushell.sh/commands/docs/sort.html)). Most of the times it makes sense
+to use the versions `nu` provides as those implement all the [pipeline improvements](https://www.nushell.sh/book/pipelines.html) of `nu`.
+If you want to call the external command use `^sort` instead of `sort` in your `nur` tasks.
+
+### Provide `nur` tasks for running normal shell commands
+
+If you want to use a `nur` to run any normal command - for example to ensure you can run this in
+any subdirectory of your project - I recommend using the following schema (using the `poetry`
+package manager as an example):
+
+```
+def --wrapped "nur poetry" [...args] {
+    poetry ...$args
+}
+```
+
+The important bit is using `--wrapped`, so the `nu` parser will not try to match flags starting with
+`-` into your `nur` task.
+
 ## Why + some history
 
 For me `nur` is the next logical step after I created `b5`. `b5` is based on running bash code and
