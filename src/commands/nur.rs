@@ -14,6 +14,7 @@ impl Command for Nur {
     fn signature(&self) -> Signature {
         let signature = Signature::build("nur")
             .usage("nu run - simple task runner.")
+            .allows_unknown_args()
             .named(
                 "config",
                 SyntaxShape::String,
