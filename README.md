@@ -180,7 +180,7 @@ structured way to work with the data in a great way.
 
 For example getting the ID of a running container in docker would look somewhat like this in a normal
 UNIX shell:  
-`docker ps | grep some-name | grep -n 1 | awk '{print $1}'`
+`docker ps | grep some-name | head -n 1 | awk '{print $1}'`
 
 This works for most of the cases, but might produce errors for example of a container named
 `this-also-contains-some-name-in-its-name` exists. This issue exists as we are parsing
