@@ -9,7 +9,7 @@ repository = "https://github.com/ddanier/nur"
 authors = ["David Danier <david.danier@gmail.com>"]
 
 [dependencies]
-miette = { version = "5.10", features = ["fancy-no-backtrace"] }
+miette = { version = "7.1", features = ["fancy-no-backtrace", "fancy"] }
 nu-cli = "0.91.0"
 nu-cmd-base = "0.91.0"
 nu-cmd-dataframe = { version = "0.91.0", optional = true }
