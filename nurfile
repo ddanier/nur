@@ -54,3 +54,18 @@ def "nur release" [
     print "Publishing to crates.io"
     nur publish
 }
+
+# Update nu dependencies to version
+def "nur upgrade-nu" [
+    version: string
+] {
+    open Cargo.toml | get dependencies | transpose key value | each {
+        |it| if ($it.key starts-with "nu-") {
+            try {
+                cargo add $"($it.key)@($version)" (if $it.value.optional {"--optional"})
+            } catch {
+                cargo add $"($it.key)@($version)"
+            }
+        }
+    }
+}
