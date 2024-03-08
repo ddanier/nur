@@ -1,8 +1,8 @@
-# nur - the simple nu based task runner
+# nur - a taskrunner based on `nu` shell
 
 `nur` is a simple, yet very powerful task runner. It borrows ideas from [`b5`](https://github.com/team23/b5)
-and [`just`](https://github.com/casey/just), but uses [`nu` scripting](https://www.nushell.sh/book/programming_in_nu.md)
-to define the tasks. This allows for very powerful, yet well-structured tasks.
+and [`just`](https://github.com/casey/just), but uses [`nu` shell scripting](https://www.nushell.sh/book/programming_in_nu.md)
+to define the tasks. This allows for well-structured tasks.
 
 ## Warning / disclaimer
 
@@ -11,14 +11,14 @@ receive some feedback. But I am only just starting using this in some production
 So feel free to poke around with this, but be aware this is far from being finished or anything.
 Meaning: There might be dragons!
 
-## Usage example
+## Quick overview and example
 
-`nur` allows you to execute tasks define in a file called `nurfile`. It will look through your
+`nur` allows you to execute tasks defined in a file called `nurfile`. It will look through your
 current working directory and all its parents to look for this file. When it has found the `nurfile`
 it will change to the directory the file was found in and then `source` the file into `nu` script.
 You can define tasks like this:
 
-```
+```shell
 # Just tell anybody or the "world" hello
 def "nur hello" [
     name: string = "world"  # The name to say hello to
@@ -42,13 +42,14 @@ like you would normally do in your shell (like `npm ci` or something). `nur` is 
 programming language, packaging system or anything. As in the end the `nurfile` is basically a
 normal `nu` script you can put into this whatever you like.
 
-See `nu` [custom commands](https://www.nushell.sh/book/custom_commands.html) for details on how to define
-tasks and at least read through the [nu quick tour](https://www.nushell.sh/book/quick_tour.html) to
-understand some basics and benefits about `nu` scripting.
+I recommend reading "Working with `nur`" below to get an overview how to use `nur`. Also I
+recommend reading the `nu` documentation about  [custom commands](https://www.nushell.sh/book/custom_commands.html) for details on how to
+define `nu` commands (and `nur` tasks) and at least read through the [nu quick tour](https://www.nushell.sh/book/quick_tour.html)
+to understand some basics and benefits about `nu` scripting.
 
 ## Installing `nur`
 
-As of now `nur` is not available in common package managers. This is however no issue as `cargo`
+As of now `nur` is not available using common package managers. This is however no issue as `cargo`
 allows you to install packages into your own user directory.
 
 **Note:** You need to have `cargo` installed for this to work. See [cargo install docs](https://doc.rust-lang.org/cargo/getting-started/installation.html)
@@ -59,17 +60,17 @@ added in `$HOME/.cargo/bin` (or `$"($env.HOME)/.cargo/bin"` in `nu` shell). Make
 this to `$PATH` (or `$env.PATH` in `nu` shell).
 
 Shell example (like Bash, zsh, ...):
-```
-cargo install nur
-export PATH="$HOME/.cargo/bin:$PATH"  # put this into your .bashrc, .zshrc or similar
-nur --version
+```shell
+> cargo install nur
+> export PATH="$HOME/.cargo/bin:$PATH"  # put this into your .bashrc, .zshrc or similar
+> nur --version
 ```
 
 `nu` shell example:
-```
-cargo install nur
-$env.PATH = ($env.PATH | split row (char esep) | prepend [$'($nu.home-path)/bin'])  # put this into $nu.env-path
-nur --version
+```shell
+> cargo install nur
+> $env.PATH = ($env.PATH | split row (char esep) | prepend [$'($nu.home-path)/bin'])  # put this into $nu.env-path
+> nur --version
 ```
 
 ## Working with `nur`
@@ -88,21 +89,69 @@ In addition you may add a file called `nurfile.local` to define personal, additi
 recommend adding the `nurfile` to git, while `nurfile.local` should be ignored. This allows
 each developer to have their own additional set of tasks.
 
-### Some basics that `nur` provides
+### Some basics about `nur`
 
-* `nur` tasks will always be run inside the directory the file `nurfile` was found in. If you 
-  place a `nurfile` in your project root (git root) you will be able to call tasks from anywhere
-  inside the project.
-* `nur` will provide the internal state and config in the variable `$nur`, containing:
-  - `$nur.run-path`: The path `nur` was executed in
-  - `$nur.project-path`: The path `nur` executes the tasks in, this means the path the `nurfile` was found
-  - `$nur.task-name`: The name of the task being executed, if any
+`nur` tasks will always be run inside the directory the file `nurfile` was found in. If you 
+place a `nurfile` in your project root (git root) you will be able to call tasks from anywhere
+inside the project. This is useful to always have a reproducible base setup for all your tasks.
+
+`nur` will provide the internal state and config in the variable `$nur`, containing:
+* `$nur.run-path`: The path `nur` was executed in
+* `$nur.project-path`: The path `nur` executes the tasks in, this means the path the `nurfile` was found
+* `$nur.task-name`: The name of the task being executed, if any
+
+### Defining `nur` tasks
+
+I highly recommend reading `nu` [custom commands](https://www.nushell.sh/book/custom_commands.html) for more details, but I will try to show you the
+most important bits right here. I will use the term "`nur` task" to talk about subcommands to `nur`
+in the following section. If you know about `nu`, just know that the tasks are actually really only
+normal subcommands.
+
+This means you define `nur` tasks  like `def "nur something"` - which you can then call by using
+`nur something`. `nur` tasks can call any other `nu` commands or system command.
+
+The most basic `nur` task could look like this:
+```shell
+def "nur hello-world" [] {
+    print "Hello world"
+}
+```
+
+`nu` commands are defined using the `def` keyword. The command name (`"nur hello-world"` in this case)
+is followed by the arguments. Those are written in square brackets (`[` and `]`), see next chapter for
+some details on arguments. The command body is then put into curly brackets and can contain any `nu`
+script code.
+
+For the most tasks this means your `nur` task will just execute some system commands like `poetry install`
+or `npm ci` or `cargo publish` or something similar - but you can also create more complex tasks,
+however you like. You may look into the [`nurfile`](nurfile) of `nur` itself for some examples.
+
+`nu` commands will use the result of the last line in the command body as the command return value. `nur`
+will then automatically print the return values of the task. The importand thing to understand is that `nu`
+will see the output of a command as its return value. So this is also true for any command output
+written to stdout, the output of the last line in your command will be used as the command result/output
+and thus printed by `nur`. Any other commands that have been run in your command function
+will be eaten by `nu`, unless you actively use `print` (`command | print` or `print (command)`).
+
+This behaviour of `nu` commands may be strange at first glance, but makes a lot of sense when working
+with pipelines the way `nu` does. Having any output produced by each line in a command definition be
+redirected mixed output and result in errors handling the results. When using `nu` scripts for
+`nur` tasks you need to know about this behaviour and handle any additional output you want to produce
+accordingly.
+
+An example using `print`:
+```shell
+def "nur do-something-useful" [] {
+    print "We will do something useful now:"
+    run-command-1 | print
+    print "Now more useful stuff:"    
+    run-command-2 | print  # you can also skip the `print` here, as it is the last line
+}
+```
+
+If your command should not produce any output you can return `null`.
 
 ### Adding some arguments to your tasks
-
-I highly recommend reading `nu` [custom commands](https://www.nushell.sh/book/custom_commands.html) for details, but I will try to show you the
-most important bits right here. I will use the term "`nur` tasks" to talk about "`nu` (sub)commands" in
-the following section.
 
 `nur` tasks can receive three different kinds of arguments:
 * Named, positional arguments: `def "nur taskname" [argument1, argument2] { ... }`
@@ -116,8 +165,9 @@ the following section.
   - Flags will provide variables names without the leading `--`
   - Flags will be available in your task code as variables with all `-` replaced by `_`
   - Above example provides the variables `$argument1` and `$argument_number2` in the task
-* Boolean flags: `def "nur taskname" [--switch] { ... }`
-  - Boolean flags must NOT be typed
+  - You may provide short version of flags by using `--flag (-f)`
+* Boolean/switch flags: `def "nur taskname" [--switch] { ... }`
+  - Boolean/switch flags must NOT be typed
   - Those can only receive the values `true`/`false`, with `false` being the default
   - Above example provides the variable `$switch` in the task
 * Rest parameters might consume the rest of the arguments: `def "nur taskname" [...rest] { ... }`
@@ -132,13 +182,58 @@ Also arguments can have a default value, you can use `argument_name = "value"` t
 An example using a default value could look like this:  
 `def "nur taskname" [argument1 = "value", argument2 = 10] { ... }`
 
-### Adding docs to your command
+Example with different kinds of arguments:
+```shell
+def "nur something" [
+    name: string
+    optional?: string
+    --age (-a): int = 23
+    --switch (-s)
+] {
+    null  # nothing here
+}
+```
 
-You may add docs by adding commands to your `nur` tasks. See the usage example above and
+### Adding documentation to your command
+
+You may add documentation by adding commands to your `nur` tasks. See the usage example above and
 the `nu` [command documentation](https://www.nushell.sh/book/custom_commands.html#documenting-your-command) section.
 
 Basic rule is that the commend right above your task will be used as a description for that task.
 Comments next to any argument will be used to document that argument.
+
+Example task documentation:
+```shell
+# This is the documentation used for your task
+# you may use multiple lines
+#
+# and use empty lines to structure the documentation (as long as it is one comment block)
+def "nur something" [
+    name: string  # This is used to document the argument "name" 
+    --age: int  # This is used to document the argument "age" 
+] {
+    null  # nothing here
+}
+```
+
+The above example will generate the following documentation when running `nur --help something` or `nur something --help`:
+```shell
+❯ nur --help something
+This is the documentation used for your task
+you may use multiple lines
+
+and use empty lines to structure the documentation (as long as it is one comment block)
+
+Usage:
+  > nur something {flags} <name>
+
+Flags:
+  --age <Int> - This is used to document the argument "age"
+  -h, --help - Display the help message for this command
+
+Parameters:
+  name <string>: This is used to document the argument "name"
+```
 
 ### Calling system commands from `nur`
 
@@ -153,13 +248,24 @@ of `sort` in your `nur` tasks.
 The same rule applies to your user defined functions, you would for example provide a function
 named `grep` (`def grep [] { ... }`) which could call the `grep` command using `^grep`.
 
-### Provide `nur` tasks for running normal shell commands
+Example calling `ls` and `sort` system commands:
+```shell
+def "nur call-sort" [] {
+    ^ls | ^sort
+}
+```
 
-If you want to use a `nur` to run any normal command - for example to ensure you can run this in
+My recommendation would be to embrace the `nu` builtin commands and use the structured data those
+provide and consume as much as possible. See "Some notes about pipelines and how `nu` handles those"
+below for some more details on this.
+
+### Provide `nur` tasks for wrapping shell commands
+
+If you want to use a `nur` to run and wrap any normal command - for example to ensure you can run this in
 any subdirectory of your project - I recommend using the following schema (using the `poetry`
 package manager as an example):
 
-```
+```shell
 def --wrapped "nur poetry" [...args] {
     poetry ...$args
 }
@@ -170,7 +276,7 @@ The important bit is using `--wrapped`, so the `nu` parser will not try to match
 
 See the [docs for def](https://www.nushell.sh/commands/docs/def.html) for some more details.
 
-## Some notes about pipelines and how `nu` handles those
+### Some notes about pipelines and how `nu` handles those
 
 Normal UNIX shells always use text to pass data from `stdout` (or `stderr`) to the next command via
 `stdin`. This is pretty easy to implement and a very slim contract to follow. `nu` however works quite
@@ -180,7 +286,9 @@ structured way to work with the data in a great way.
 
 For example getting the ID of a running container in docker would look somewhat like this in a normal
 UNIX shell:  
-`docker ps | grep some-name | head -n 1 | awk '{print $1}'`
+```shell
+docker ps | grep some-name | head -n 1 | awk '{print $1}'
+```
 
 This works for most of the cases, but might produce errors for example of a container named
 `this-also-contains-some-name-in-its-name` exists. This issue exists as we are parsing
@@ -195,7 +303,9 @@ Getting the `docker ps` text data input `nu` can for example be done using `dock
 for more possible input formats.
 
 To get the first container matching using the image `some-name` you could use this command:  
-`docker ps | from ssv | where IMAGE == "some-name" | get "CONTAINER ID" | first`
+```shell
+docker ps | from ssv | where IMAGE == "some-name" | get "CONTAINER ID" | first
+```
 
 This is using the [where command](https://www.nushell.sh/commands/docs/where.html) to match only
 a single row and then the [get command](https://www.nushell.sh/commands/docs/get.html) to reduce the
@@ -207,9 +317,20 @@ scripts and thus also true for the tasks you will write in your task runner. Thi
 choose `nu` for creating `nur`.
 
 I recommend reading [thinking in nu](https://www.nushell.sh/book/thinking_in_nu.html#nushell-isn-t-bash) to
-get a grasp about this concept and start using `nu` script in `nur` in a very structured way.
+get a grasp about this concept and start using `nu` script in `nur` in a very structured way. Also
+you may want to read the [`nu` documentation on pipelines](https://www.nushell.sh/book/pipelines.html).
 
-## Why `nur` + some history
+### Advanced topics and further reading
+
+You may also look into those `nu` topics:
+
+* [Variables](https://www.nushell.sh/book/variables_and_subexpressions.html) (also covers immutable/mutable variables)
+* [Operators](https://www.nushell.sh/book/operators.html)
+* [Control flow](https://www.nushell.sh/book/control_flow.html)
+* [Modules](https://www.nushell.sh/book/modules.html)
+* [Builtin commands](https://www.nushell.sh/commands/)
+
+## Why I built `nur` + some history
 
 For me `nur` is the next logical step after I created `b5`. `b5` is based on running bash code and
 allowing users to do this in a somewhat ordered matter. Initially `b5` even was just some bash script,

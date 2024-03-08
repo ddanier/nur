@@ -1,6 +1,6 @@
 [package]
 name = "nur"
-description = "nu run - simple taskrunner"
+description = "nur - a taskrunner based on nu shell"
 version = "0.1.7"
 edition = "2021"
 license = "MIT"
