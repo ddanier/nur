@@ -320,15 +320,57 @@ I recommend reading [thinking in nu](https://www.nushell.sh/book/thinking_in_nu.
 get a grasp about this concept and start using `nu` script in `nur` in a very structured way. Also
 you may want to read the [`nu` documentation on pipelines](https://www.nushell.sh/book/pipelines.html).
 
+### Using other custom commands in your `nurfile`
+
+You can define any command you like and need to use. Just know that subcommands to `"nur"` will
+be available as tasks. All other commands will not be available.
+
+```shell
+def some-helper [] {
+    do-something-useful
+}
+
+def "nur something" [] {
+    print "Calling some-helper"
+    some-helper
+}
+```
+
+### Organising your `nur` helpers into modules
+
+If your helper commands get more sophisticated you may want to use a `nu` module instead of
+putting all of your code into one big `nurfile`. `nur` will automatically add the directory
+called `.nurscripts/` into `$env.NU_LIB_DIRS`. This allows you to define `nu` modules there and
+then use those in your `nurfile`.
+
+Basic hello world example:
+```shell
+# .nurscripts/hello-world.nu
+
+export def main [] {
+    print "Hello world"
+}
+
+# nurfile
+use hello-world.nu
+
+def "nur hello" [] {
+    hello-world
+}
+```
+
+I recommend reading about [`nu` modules](https://www.nushell.sh/book/modules.html) in the official `nu` documentation.
+
 ### Advanced topics and further reading
 
 You may also look into those `nu` topics:
 
+* [Commands](https://www.nushell.sh/book/custom_commands.html)
 * [Variables](https://www.nushell.sh/book/variables_and_subexpressions.html) (also covers immutable/mutable variables)
 * [Operators](https://www.nushell.sh/book/operators.html)
 * [Control flow](https://www.nushell.sh/book/control_flow.html)
-* [Modules](https://www.nushell.sh/book/modules.html)
 * [Builtin commands](https://www.nushell.sh/commands/)
+* [Modules](https://www.nushell.sh/book/modules.html)
 
 ## Why I built `nur` + some history
 

@@ -58,18 +58,23 @@ fn main() -> Result<(), miette::ErrReport> {
     //     parsed_nu_cli_args.env_file.as_ref(),
     // );
 
-    // Add include path in project
-    // TODO: Add some include paths?
-    // if let Some(include_path) = &parsed_nu_cli_args.include_path {
-    //     let span = include_path.span;
-    //     let vals: Vec<_> = include_path
-    //         .item
-    //         .split('\x1e') // \x1e is the record separator character (a character that is unlikely to appear in a path)
-    //         .map(|x| Value::string(x.trim().to_string(), span))
-    //         .collect();
-    //
-    //     engine_state.add_env_var("NU_LIB_DIRS".into(), Value::list(vals, span));
-    // }
+    // Add library path in project
+    let nurscripts_path = project_path.join(".nurscripts");
+    if parsed_nur_args.debug_output {
+        eprintln!("nurscripts path: {:?}", nurscripts_path);
+    }
+    if nurscripts_path.exists() && nurscripts_path.is_dir() {
+        engine_state.add_env_var("NU_LIB_DIRS".into(), Value::list(
+            vec![Value::string(String::from(nurscripts_path.to_str().unwrap()), Span::unknown())],
+            Span::unknown(),
+        ));
+    } else {
+        // Ensure we do not load user libraries
+        engine_state.add_env_var("NU_LIB_DIRS".into(), Value::list(
+            vec![],
+            Span::unknown(),
+        ));
+    }
 
     if let Some(_) = parsed_nur_args.config_file {
         eprintln!("WARNING: Config files are not supported yet.")
