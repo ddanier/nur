@@ -15,11 +15,5 @@ jobs:
           toolchain: stable
           override: true
 
-      - name: Install cargo-tarpaulin
-        run: cargo install cargo-tarpaulin
-
       - name: Run Tests
         run: cargo test
-
-      - name: Run Coverage
-        run: cargo tarpaulin --out Xml
