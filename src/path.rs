@@ -14,9 +14,6 @@ pub fn find_project_path(
             }
         }
 
-        println!("{:?}", taskfile_path);
-        println!("{:?}", path);
-
         if let Some(parent) = path.parent() {
             path = parent.to_path_buf();
         } else {
