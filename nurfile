@@ -24,6 +24,17 @@ def --wrapped "nur run" [...args: string] {
     cargo "run" ...$args
 }
 
+# Run tests
+def "nur test" [
+    --coverage
+] {
+    if $coverage {
+        cargo tarpaulin
+    } else {
+        cargo test
+    }
+}
+
 # Update version in Cargo.toml
 def "nur version" [
     version: string
@@ -40,7 +51,7 @@ def "nur publish" [] {
     cargo publish
 }
 
-# release
+# Update version and release to crates.io
 def "nur release" [
     version: string
 ] {
