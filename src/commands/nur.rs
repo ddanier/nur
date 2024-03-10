@@ -12,10 +12,9 @@ impl Command for Nur {
     }
 
     fn signature(&self) -> Signature {
-        
+        let mut signature = Signature::build("nur");
 
-        Signature::build("nur")
-            .usage("nu run - simple task runner.")
+        signature = signature.usage("nu run - simple task runner.")
             .allows_unknown_args()
             .named(
                 "config",
@@ -43,11 +42,6 @@ impl Command for Nur {
                 "Attach stdin to nu function call",
                 None,
             )
-            .switch(
-                "debug",
-                "Show debug details (DO NOT USE)",
-                None,
-            )
             .optional(
                 "task name",
                 SyntaxShape::Filepath,
@@ -58,7 +52,18 @@ impl Command for Nur {
                 SyntaxShape::String,
                 "parameters to the executed task",
             )
-            .category(Category::Default)
+            .category(Category::Default);
+
+        #[cfg(feature = "debug")]
+        {
+            signature = signature.switch(
+                "debug",
+                "Show debug details",
+                None,
+            );
+        }
+
+        signature
     }
 
     fn usage(&self) -> &str {

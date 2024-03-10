@@ -32,6 +32,7 @@ fn main() -> Result<(), miette::ErrReport> {
     let parsed_nur_args = parse_commandline_args(&args_to_nur.join(" "), &mut engine_state)
         .unwrap_or_else(|_| std::process::exit(1));
 
+    #[cfg(feature = "debug")]
     if parsed_nur_args.debug_output {
         eprintln!("nur args: {:?}", parsed_nur_args);
         eprintln!("task name: {:?}", task_name);
@@ -60,6 +61,7 @@ fn main() -> Result<(), miette::ErrReport> {
 
     // Add library path in project
     let nurscripts_path = project_path.join(".nurscripts");
+    #[cfg(feature = "debug")]
     if parsed_nur_args.debug_output {
         eprintln!("nurscripts path: {:?}", nurscripts_path);
     }
@@ -114,6 +116,7 @@ fn main() -> Result<(), miette::ErrReport> {
     // Load task files
     let nurfile_path = project_path.join("nurfile");
     let local_nurfile_path = project_path.join("nurfile.local");
+    #[cfg(feature = "debug")]
     if parsed_nur_args.debug_output {
         eprintln!("nurfile path: {:?}", nurfile_path);
         eprintln!("nurfile local path: {:?}", local_nurfile_path);
@@ -144,6 +147,7 @@ fn main() -> Result<(), miette::ErrReport> {
 
     // Initialize internal data
     let task_def_name = format!("nur {}", task_name);
+    #[cfg(feature = "debug")]
     if parsed_nur_args.debug_output {
         eprintln!("task def name: {}", task_def_name);
     }
@@ -194,6 +198,7 @@ fn main() -> Result<(), miette::ErrReport> {
 
     // Execute the task
     let full_task_call = format!("{} {}", task_def_name, args_to_task.join(" "));
+    #[cfg(feature = "debug")]
     if parsed_nur_args.debug_output {
         eprintln!("full task call: {}", full_task_call);
     }
