@@ -2559,6 +2559,7 @@ name = "nur"
 version = "0.1.8"
 dependencies = [
  "miette",
+ "nu-ansi-term",
  "nu-cli",
  "nu-cmd-base",
  "nu-cmd-dataframe",

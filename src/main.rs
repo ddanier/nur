@@ -14,6 +14,7 @@ use crate::args::{gather_commandline_args, parse_commandline_args};
 use nu_protocol::{Span, NU_VARIABLE_ID, eval_const::create_nu_constant, PipelineData, RawStream, BufferedReader, Value, Record, Type};
 use miette::Result;
 use nu_protocol::engine::StateWorkingSet;
+use nu_ansi_term::Color;
 use crate::commands::Nur;
 use crate::context::Context;
 use crate::errors::NurError;
@@ -26,6 +27,7 @@ fn main() -> Result<(), miette::ErrReport> {
 
     // Initialize nu engine state
     let mut engine_state = init_engine_state(project_path)?;
+    let use_color = engine_state.get_config().use_ansi_coloring;
 
     // Parse args
     let (args_to_nur, task_name, args_to_task) = gather_commandline_args();
@@ -211,11 +213,17 @@ fn main() -> Result<(), miette::ErrReport> {
         println!("nur version {}", env!("CARGO_PKG_VERSION"));
         println!("Project path {:?}", project_path);
         println!("Executing task {}", task_name);
+        println!();
         context.eval_and_print(
             full_task_call,
             input,
         )?;
-        println!("Task exited ok");
+        println!();
+        println!(
+            "{}Task exited ok{}",
+            if use_color { Color::Green.prefix().to_string() } else { String::from("") },
+            if use_color { Color::Green.suffix().to_string() } else { String::from("") },
+        );
     }
 
     Ok(())
