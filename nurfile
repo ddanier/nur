@@ -35,6 +35,13 @@ def "nur test" [
     }
 }
 
+# Run linter (clippy)
+def --wrapped "nur lint" [
+    ...args
+] {
+    cargo clippy ...$args
+}
+
 # Update version in Cargo.toml
 def "nur version" [
     version: string

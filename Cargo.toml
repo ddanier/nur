@@ -6,7 +6,10 @@ edition = "2021"
 license = "MIT"
 homepage = "https://github.com/ddanier/nur"
 repository = "https://github.com/ddanier/nur"
+readme = "README.md"
 authors = ["David Danier <david.danier@gmail.com>"]
+keywords = ["nu", "taskrunner"]
+categories = ["command-line-utilities", "development-tools"]
 
 [dependencies]
 miette = { version = "7.1", features = ["fancy-no-backtrace", "fancy"] }

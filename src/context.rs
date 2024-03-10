@@ -154,7 +154,7 @@ impl Context {
 impl From<EngineState> for Context {
     fn from(engine_state: EngineState) -> Context {
         Context {
-            engine_state: engine_state,
+            engine_state,
             stack: Stack::new(),
         }
     }
