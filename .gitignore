@@ -1,3 +1,5 @@
+/.idea
 /target
 /_*
 /nurfile.local
+tarpaulin-report.html
