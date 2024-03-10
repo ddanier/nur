@@ -8,31 +8,31 @@ pub type NurResult<T> = Result<T, NurError>;
 pub enum NurError {
     #[error("Init nu error {0}")]
     #[diagnostic()]
-    NurInitError(String),
+    InitError(String),
 
     #[error("IO Error {0}")]
     #[diagnostic()]
-    NurIoError(String),
+    IoError(String),
 
     #[error("Shell Error {0}")]
     #[diagnostic()]
-    NurShellError(#[from] ShellError),
+    ShellError(#[from] ShellError),
 
     #[error("Parse Error {0:?}")]
     #[diagnostic()]
-    NurParseErrors(#[related] Vec<ParseError>),
+    ParseErrors(#[related] Vec<ParseError>),
 
     #[error("Could not find the task {0}")]
     #[diagnostic()]
-    NurTaskNotFound(String),
+    TaskNotFound(String),
 
     #[error("Could not find nurfile in path and parents")]
     #[diagnostic()]
-    NurTaskfileNotFound(),
+    NurfileNotFound(),
 }
 
 impl From<std::io::Error> for NurError {
     fn from(_value: std::io::Error) -> NurError {
-        NurError::NurIoError(String::from("Could not read file"))
+        NurError::IoError(String::from("Could not read file"))
     }
 }

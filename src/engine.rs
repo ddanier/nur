@@ -1,11 +1,11 @@
-use std::path::PathBuf;
+use std::path::Path;
 use nu_cli::gather_parent_env_vars;
 use nu_protocol::{engine::EngineState, report_error_new, Span, Value};
 use nu_std::load_standard_library;
 use crate::errors::{NurError, NurResult};
 use crate::nu_version::NU_VERSION;
 
-pub fn init_engine_state(project_path: &PathBuf) -> NurResult<EngineState> {
+pub fn init_engine_state(project_path: &Path) -> NurResult<EngineState> {
     let engine_state = nu_cmd_lang::create_default_context();
     let engine_state = nu_command::add_shell_command_context(engine_state);
     #[cfg(feature = "extra")]
@@ -28,7 +28,7 @@ pub fn init_engine_state(project_path: &PathBuf) -> NurResult<EngineState> {
 
     if let Err(err) = engine_state.merge_delta(delta) {
         report_error_new(&engine_state, &err);
-        return Err(NurError::NurInitError(String::from("Could not load CLI functions")))
+        return Err(NurError::InitError(String::from("Could not load CLI functions")))
     }
 
     // First, set up env vars as strings only
@@ -39,8 +39,8 @@ pub fn init_engine_state(project_path: &PathBuf) -> NurResult<EngineState> {
     );
 
     // Load std library
-    if let Err(_) = load_standard_library(&mut engine_state) {
-        return Err(NurError::NurInitError(String::from("Could not load std library")))
+    if load_standard_library(&mut engine_state).is_err() {
+        return Err(NurError::InitError(String::from("Could not load std library")))
     }
 
     // Set some engine flags

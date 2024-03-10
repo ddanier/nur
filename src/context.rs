@@ -38,7 +38,7 @@ impl Context {
                 std::process::exit(1);
             }
 
-            Err(NurError::NurParseErrors(working_set.parse_errors))
+            Err(NurError::ParseErrors(working_set.parse_errors))
         }
     }
 
@@ -127,9 +127,9 @@ impl Context {
     pub fn get_def<S: AsRef<str>>(
         &self,
         name: S,
-    ) -> Option<&Box<dyn Command>> {
+    ) -> Option<&dyn Command> {
         if let Some(decl_id) = self.engine_state.find_decl(name.as_ref().as_bytes(), &[]) {
-            Some(self.engine_state.get_decl(decl_id))
+            Some(self.engine_state.get_decl(decl_id).as_ref())
         } else {
             None
         }
@@ -137,7 +137,7 @@ impl Context {
 
     pub(crate) fn print_help(
         &mut self,
-        command: Box<dyn Command>,
+        command: &dyn Command,
     ) {
         let full_help = get_full_help(
             &command.signature(),

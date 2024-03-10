@@ -1,23 +1,21 @@
-use std::path::PathBuf;
+use std::path::Path;
 use crate::errors::{NurError, NurResult};
 
 pub fn find_project_path(
-    cwd: &PathBuf,
-) -> NurResult<PathBuf> {
-    let mut path = cwd.clone();
+    cwd: &Path,
+) -> NurResult<&Path> {
+    let mut path = cwd;
 
     loop {
         let taskfile_path = path.join("nurfile");
         if taskfile_path.exists() {
-            if let Some(project_path) = path.to_str() {
-                return Ok(PathBuf::from(project_path));
-            }
+            return Ok(path);
         }
 
         if let Some(parent) = path.parent() {
-            path = parent.to_path_buf();
+            path = parent;
         } else {
-            return Err(NurError::NurTaskfileNotFound());
+            return Err(NurError::NurfileNotFound());
         }
     }
 }
@@ -77,7 +75,7 @@ mod tests {
         match find_project_path(&temp_dir_path) {
             Ok(_) => panic!("Expected an error, but got Ok"),
             Err(e) => match e {
-                NurError::NurTaskfileNotFound() => (), // Test passes
+                NurError::NurfileNotFound() => (), // Test passes
                 _ => panic!("Expected NurTaskfileNotFound, but got a different error"),
             },
         }

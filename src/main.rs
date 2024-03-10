@@ -25,7 +25,7 @@ fn main() -> Result<(), miette::ErrReport> {
     let project_path = find_project_path(&init_cwd)?;
 
     // Initialize nu engine state
-    let mut engine_state = init_engine_state(&project_path)?;
+    let mut engine_state = init_engine_state(project_path)?;
 
     // Parse args
     let (args_to_nur, task_name, args_to_task) = gather_commandline_args();
@@ -151,12 +151,12 @@ fn main() -> Result<(), miette::ErrReport> {
     // Handle help
     if parsed_nur_args.show_help || task_name.is_empty() {
         if task_name.is_empty() {
-            context.print_help(Box::new(Nur));
+            context.print_help(&Nur);
         } else if let Some(command) = context.get_def(task_def_name) {
-            context.print_help(command.clone());
+            context.clone().print_help(command);
         } else {
             return Err(miette::ErrReport::from(
-                NurError::NurTaskNotFound(task_name)
+                NurError::TaskNotFound(task_name)
             ));
         }
 
@@ -166,7 +166,7 @@ fn main() -> Result<(), miette::ErrReport> {
     // Check if requested task exists
     if !context.has_def(&task_def_name) {
         return Err(miette::ErrReport::from(
-            NurError::NurTaskNotFound(task_name)
+            NurError::TaskNotFound(task_name)
         ));
     }
 
