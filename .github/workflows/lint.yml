@@ -1,4 +1,4 @@
-name: Run tests
+name: Run linter
 
 on: [push, pull_request]
 
@@ -15,5 +15,5 @@ jobs:
           toolchain: stable
           override: true
 
-      - name: Run Tests
-        run: cargo test
+      - name: Run Linter
+        run: cargo clippy
