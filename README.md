@@ -66,6 +66,9 @@ Shell example (like Bash, zsh, ...):
 > nur --version
 ```
 
+**Important:** You do **not** need to have `nu` shell installed for `nur` to work. `nur` does
+include the whole `nu` runtime engine and will run as a standalone command.
+
 ## Working with `nur`
 
 As shown above you can use subcommands to `"nur"` to add your tasks. This section will give
