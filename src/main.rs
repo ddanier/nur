@@ -76,7 +76,7 @@ fn main() -> Result<(), miette::ErrReport> {
         ));
     }
 
-    if let Some(_) = parsed_nur_args.config_file {
+    if parsed_nur_args.config_file.is_some() {
         eprintln!("WARNING: Config files are not supported yet.")
     }
 
@@ -149,17 +149,15 @@ fn main() -> Result<(), miette::ErrReport> {
     }
 
     // Handle help
-    if parsed_nur_args.show_help || task_name.len() == 0 {
-        if task_name.len() == 0 {
+    if parsed_nur_args.show_help || task_name.is_empty() {
+        if task_name.is_empty() {
             context.print_help(Box::new(Nur));
+        } else if let Some(command) = context.get_def(task_def_name) {
+            context.print_help(command.clone());
         } else {
-            if let Some(&ref command) = context.get_def(task_def_name) {
-                context.print_help(command.clone());
-            } else {
-                return Err(miette::ErrReport::from(
-                    NurError::NurTaskNotFound(String::from(task_name))
-                ));
-            }
+            return Err(miette::ErrReport::from(
+                NurError::NurTaskNotFound(task_name)
+            ));
         }
 
         std::process::exit(0);
@@ -168,7 +166,7 @@ fn main() -> Result<(), miette::ErrReport> {
     // Check if requested task exists
     if !context.has_def(&task_def_name) {
         return Err(miette::ErrReport::from(
-            NurError::NurTaskNotFound(String::from(task_name))
+            NurError::NurTaskNotFound(task_name)
         ));
     }
 

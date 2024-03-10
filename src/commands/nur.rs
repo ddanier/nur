@@ -12,7 +12,9 @@ impl Command for Nur {
     }
 
     fn signature(&self) -> Signature {
-        let signature = Signature::build("nur")
+        
+
+        Signature::build("nur")
             .usage("nu run - simple task runner.")
             .allows_unknown_args()
             .named(
@@ -56,9 +58,7 @@ impl Command for Nur {
                 SyntaxShape::String,
                 "parameters to the executed task",
             )
-            .category(Category::Default);
-
-        signature
+            .category(Category::Default)
     }
 
     fn usage(&self) -> &str {

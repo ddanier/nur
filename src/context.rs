@@ -66,7 +66,7 @@ impl Context {
     ) -> NurResult<()> {
         let str_contents = contents.to_string();
 
-        if str_contents.len() == 0 {
+        if str_contents.is_empty() {
             return Ok(());
         }
 
@@ -120,7 +120,7 @@ impl Context {
         name: S,
     ) -> bool {
         self.engine_state
-            .find_decl(name.as_ref().as_bytes(), &vec![])
+            .find_decl(name.as_ref().as_bytes(), &[])
             .is_some()
     }
 
@@ -128,7 +128,7 @@ impl Context {
         &self,
         name: S,
     ) -> Option<&Box<dyn Command>> {
-        if let Some(decl_id) = self.engine_state.find_decl(name.as_ref().as_bytes(), &vec![]) {
+        if let Some(decl_id) = self.engine_state.find_decl(name.as_ref().as_bytes(), &[]) {
             Some(self.engine_state.get_decl(decl_id))
         } else {
             None

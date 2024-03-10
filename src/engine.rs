@@ -32,7 +32,7 @@ pub fn init_engine_state(project_path: &PathBuf) -> NurResult<EngineState> {
     }
 
     // First, set up env vars as strings only
-    gather_parent_env_vars(&mut engine_state, &project_path);
+    gather_parent_env_vars(&mut engine_state, project_path);
     engine_state.add_env_var(
         "NU_VERSION".to_string(),
         Value::string(NU_VERSION, Span::unknown()),
