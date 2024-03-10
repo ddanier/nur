@@ -2571,6 +2571,7 @@ dependencies = [
  "nu-protocol",
  "nu-std",
  "nu-utils",
+ "tempfile",
  "thiserror",
 ]
 
