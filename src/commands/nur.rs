@@ -16,12 +16,12 @@ impl Command for Nur {
 
         signature = signature.usage("nu run - simple task runner.")
             .allows_unknown_args()
-            .named(
-                "config",
-                SyntaxShape::String,
-                "path to config",
-                None,
-            )
+            // .named(
+            //     "config",
+            //     SyntaxShape::String,
+            //     "path to config",
+            //     None,
+            // )
             .switch(
                 "version",
                 "output version number and exit",

@@ -80,9 +80,9 @@ fn main() -> Result<(), miette::ErrReport> {
         ));
     }
 
-    if parsed_nur_args.config_file.is_some() {
-        eprintln!("WARNING: Config files are not supported yet.")
-    }
+    // if parsed_nur_args.config_file.is_some() {
+    //     eprintln!("WARNING: Config files are not supported yet.")
+    // }
 
     // Set up the $nu constant before evaluating any files (need to have $nu available in them)
     let nu_const = create_nu_constant(&engine_state, PipelineData::empty().span().unwrap_or_else(Span::unknown))?;

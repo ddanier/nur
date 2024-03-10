@@ -5,7 +5,8 @@ use nu_protocol::report_error;
 use nu_protocol::{
     ast::{Expr, Expression, PipelineElement},
     engine::{Command, EngineState, Stack, StateWorkingSet},
-    ShellError, Spanned,
+    ShellError,
+    // Spanned,
 };
 use nu_utils::stdout_write_all_and_flush;
 use crate::commands::Nur;
@@ -75,7 +76,7 @@ pub(crate) fn parse_commandline_args(
                         },
                     )) = pipeline.elements.first()
         {
-            let config_file = call.get_flag_expr("config");
+            // let config_file = call.get_flag_expr("config");
             let list_tasks = call.has_flag(engine_state, &mut stack, "list")?;
             let quiet_execution = call.has_flag(engine_state, &mut stack, "quiet")?;
             let attach_stdin = call.has_flag(engine_state, &mut stack, "stdin")?;
@@ -83,28 +84,28 @@ pub(crate) fn parse_commandline_args(
             #[cfg(feature = "debug")]
             let debug_output = call.has_flag(engine_state, &mut stack, "debug")?;
 
-            fn extract_contents(
-                expression: Option<&Expression>,
-            ) -> Result<Option<Spanned<String>>, ShellError> {
-                if let Some(expr) = expression {
-                    let str = expr.as_string();
-                    if let Some(str) = str {
-                        Ok(Some(Spanned {
-                            item: str,
-                            span: expr.span,
-                        }))
-                    } else {
-                        Err(ShellError::TypeMismatch {
-                            err_message: "string".into(),
-                            span: expr.span,
-                        })
-                    }
-                } else {
-                    Ok(None)
-                }
-            }
-
-            let config_file = extract_contents(config_file)?;
+            // fn extract_contents(
+            //     expression: Option<&Expression>,
+            // ) -> Result<Option<Spanned<String>>, ShellError> {
+            //     if let Some(expr) = expression {
+            //         let str = expr.as_string();
+            //         if let Some(str) = str {
+            //             Ok(Some(Spanned {
+            //                 item: str,
+            //                 span: expr.span,
+            //             }))
+            //         } else {
+            //             Err(ShellError::TypeMismatch {
+            //                 err_message: "string".into(),
+            //                 span: expr.span,
+            //             })
+            //         }
+            //     } else {
+            //         Ok(None)
+            //     }
+            // }
+            //
+            // let config_file = extract_contents(config_file)?;
 
             if call.has_flag(engine_state, &mut stack, "version")? {
                 let version = env!("CARGO_PKG_VERSION").to_string();
@@ -116,7 +117,7 @@ pub(crate) fn parse_commandline_args(
             }
 
             return Ok(NurCliArgs {
-                config_file,
+                // config_file,
                 list_tasks,
                 quiet_execution,
                 attach_stdin,
@@ -141,7 +142,7 @@ pub(crate) fn parse_commandline_args(
 
 #[derive(Debug)]
 pub(crate) struct NurCliArgs {
-    pub(crate) config_file: Option<Spanned<String>>,
+    // pub(crate) config_file: Option<Spanned<String>>,
     pub(crate) list_tasks: bool,
     pub(crate) quiet_execution: bool,
     pub(crate) attach_stdin: bool,
