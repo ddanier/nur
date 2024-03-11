@@ -8,6 +8,7 @@ mod commands;
 
 use std::env;
 use std::io::BufReader;
+use std::process::ExitCode;
 use nu_cmd_base::util::get_init_cwd;
 use crate::engine::init_engine_state;
 use crate::args::{gather_commandline_args, parse_commandline_args};
@@ -20,7 +21,7 @@ use crate::context::Context;
 use crate::errors::NurError;
 use crate::path::find_project_path;
 
-fn main() -> Result<(), miette::ErrReport> {
+fn main() -> Result<ExitCode, miette::ErrReport> {
     // Get initial directory details
     let init_cwd = get_init_cwd();
     let project_path = find_project_path(&init_cwd)?;
@@ -199,33 +200,50 @@ fn main() -> Result<(), miette::ErrReport> {
     };
 
     // Execute the task
+    let exit_code: i64;
     let full_task_call = format!("{} {}", task_def_name, args_to_task.join(" "));
     #[cfg(feature = "debug")]
     if parsed_nur_args.debug_output {
         eprintln!("full task call: {}", full_task_call);
     }
     if parsed_nur_args.quiet_execution {
-        context.eval(
+        exit_code = context.eval(
             full_task_call,
             input,
         )?;
+
+        #[cfg(feature = "debug")]
+        if parsed_nur_args.debug_output {
+            println!("Exit code {:?}", exit_code);
+        }
     } else {
         println!("nur version {}", env!("CARGO_PKG_VERSION"));
         println!("Project path {:?}", project_path);
         println!("Executing task {}", task_name);
         println!();
-        context.eval_and_print(
+        exit_code = context.eval_and_print(
             full_task_call,
             input,
         )?;
-        println!();
-        println!(
-            "{}Task exited ok{}",
-            if use_color { Color::Green.prefix().to_string() } else { String::from("") },
-            if use_color { Color::Green.suffix().to_string() } else { String::from("") },
-        );
+        #[cfg(feature = "debug")]
+        if parsed_nur_args.debug_output {
+            println!("Exit code {:?}", exit_code);
+        }
+        if exit_code == 0 {
+            println!(
+                "{}Task execution successful{}",
+                if use_color { Color::Green.prefix().to_string() } else { String::from("") },
+                if use_color { Color::Green.suffix().to_string() } else { String::from("") },
+            );
+        } else {
+            println!(
+                "{}Task execution failed{}",
+                if use_color { Color::Red.prefix().to_string() } else { String::from("") },
+                if use_color { Color::Red.suffix().to_string() } else { String::from("") },
+            );
+        }
     }
 
-    Ok(())
+    Ok(ExitCode::from(exit_code as u8))
 }
 

@@ -1,4 +1,4 @@
-use nu_protocol::{ast::Block, engine::{EngineState, Stack, StateWorkingSet}, PipelineData};
+use nu_protocol::{ast::Block, engine::{EngineState, Stack, StateWorkingSet}, PipelineData, Value};
 use crate::errors::{NurResult, NurError};
 use std::fs;
 use std::path::Path;
@@ -63,11 +63,11 @@ impl Context {
         contents: S,
         input: PipelineData,
         print: bool,
-    ) -> NurResult<()> {
+    ) -> NurResult<i64> {
         let str_contents = contents.to_string();
 
         if str_contents.is_empty() {
-            return Ok(());
+            return Ok(0);
         }
 
         let block = self._parse_nu_script(
@@ -78,22 +78,37 @@ impl Context {
         let result = self._execute_block(&block, input)?;
 
         if print {
-            result.print(
+            let exit_code = result.print(
                 &self.engine_state,
                 &mut self.stack,
                 false,
                 false,
             )?;
+            Ok(exit_code)
+        } else {
+            if let PipelineData::ExternalStream {
+                exit_code,
+                ..
+            } = result {
+                if let Some(exit_code) = exit_code {
+                    let mut exit_codes: Vec<_> = exit_code.into_iter().collect();
+                    return match exit_codes.pop() {
+                        #[cfg(unix)]
+                        Some(Value::Error { error, .. }) => Err(NurError::from(*error)),
+                        Some(Value::Int { val, .. }) => Ok(val),
+                        _ => Ok(0),
+                    }
+                }
+            }
+            Ok(0)
         }
-
-        Ok(())
     }
 
     pub fn eval<S: ToString>(
         &mut self,
         contents: S,
         input: PipelineData,
-    ) -> NurResult<()> {
+    ) -> NurResult<i64> {
         self._eval(None, contents, input, false)
     }
 
@@ -101,7 +116,7 @@ impl Context {
         &mut self,
         contents: S,
         input: PipelineData,
-    ) -> NurResult<()> {
+    ) -> NurResult<i64> {
         self._eval(None, contents, input, true)
     }
 
@@ -109,7 +124,7 @@ impl Context {
         &mut self,
         file_path: P,
         input: PipelineData,
-    ) -> NurResult<()> {
+    ) -> NurResult<i64> {
         let contents = fs::read_to_string(&file_path)?;
 
         self._eval(file_path.as_ref().to_str(), contents, input, false)
