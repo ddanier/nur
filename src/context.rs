@@ -87,17 +87,15 @@ impl Context {
             Ok(exit_code)
         } else {
             if let PipelineData::ExternalStream {
-                exit_code,
+                exit_code: Some(exit_code),
                 ..
             } = result {
-                if let Some(exit_code) = exit_code {
-                    let mut exit_codes: Vec<_> = exit_code.into_iter().collect();
-                    return match exit_codes.pop() {
-                        #[cfg(unix)]
-                        Some(Value::Error { error, .. }) => Err(NurError::from(*error)),
-                        Some(Value::Int { val, .. }) => Ok(val),
-                        _ => Ok(0),
-                    }
+                let mut exit_codes: Vec<_> = exit_code.into_iter().collect();
+                return match exit_codes.pop() {
+                    #[cfg(unix)]
+                    Some(Value::Error { error, .. }) => Err(NurError::from(*error)),
+                    Some(Value::Int { val, .. }) => Ok(val),
+                    _ => Ok(0),
                 }
             }
             Ok(0)
