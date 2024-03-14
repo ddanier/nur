@@ -77,6 +77,7 @@ def "nur release" [
 def "nur upgrade-nu" [
     version: string
 ] {
+    print $"Updating all required nu packages to (ansi purple)($version)(ansi reset)"
     open Cargo.toml | get dependencies | transpose key value | each {
         |it| if ($it.key starts-with "nu-") and not ($it.key == "nu-ansi-term") {
             try {
@@ -88,7 +89,11 @@ def "nur upgrade-nu" [
     }
 
     print ""
-    print $"(ansi yellow)Please ensure all other packages are also upgraded accordingly:(ansi reset)"
+    print $"Storing version (ansi purple)($version)(ansi reset) in src/nu_version.rs as NU_VERSION constant"
+    echo $'pub const NU_VERSION: &str = "($version)";' | save -f src/nu_version.rs
+
+    print ""
+    print $"(ansi yellow)IMPORTANT: Please ensure all other packages are also upgraded accordingly:(ansi reset)"
     print $" -> (ansi cyan)nu-ansi-term(ansi reset): needs to be the same version as used in (ansi cyan)nu-cli(ansi reset)"
     print $" -> (ansi cyan)miette(ansi reset): needs to be the same version as used in (ansi cyan)nu-cmd-base(ansi reset)"
 }
