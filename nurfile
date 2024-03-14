@@ -86,6 +86,9 @@ def "nur release" [
     print ""
     print "Publishing to crates.io"
     nur publish
+
+    print ""
+    print $"(ansi yellow)Don't forget to push last commit + tags to github!(ansi reset)"
 }
 
 # Update nu dependencies to version
