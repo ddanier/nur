@@ -246,4 +246,3 @@ fn main() -> Result<ExitCode, miette::ErrReport> {
 
     Ok(ExitCode::from(exit_code as u8))
 }
-
