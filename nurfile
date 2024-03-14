@@ -9,6 +9,18 @@ def "nur hello" [
 
 # Actual useful tasks
 
+# Setup local environment and install deps
+def "nur install" [] {
+    cargo fetch
+
+    init-pre-commit
+}
+
+# Update local dev environment
+def "nur update" [] {
+    cargo fetch
+}
+
 # Run cargo
 def --wrapped "nur cargo" [...args: string] {
     cargo ...$args
@@ -99,4 +111,15 @@ def "nur upgrade-nu" [
     print $"(ansi yellow)IMPORTANT: Please ensure all other packages are also upgraded accordingly:(ansi reset)"
     print $" -> (ansi cyan)nu-ansi-term(ansi reset): needs to be the same version as used in (ansi cyan)nu-cli(ansi reset)"
     print $" -> (ansi cyan)miette(ansi reset): needs to be the same version as used in (ansi cyan)nu-cmd-base(ansi reset)"
+}
+
+# Utility commands
+
+def init-pre-commit [] {
+    if (which pre-commit | is-empty) {
+        print -e $"(ansi red)You don't have pre-commit installed locally, pre-commit hooks cannot be initialized(ansi reset)"
+        return null
+    }
+
+    pre-commit install --install-hooks
 }
