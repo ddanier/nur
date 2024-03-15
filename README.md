@@ -11,7 +11,7 @@ current working directory and all its parents to look for this file. When it has
 it will change to the directory the file was found in and then `source` the file into `nu` script.
 You can define tasks like this:
 
-```shell
+```nu-script
 # Just tell anybody or the "world" hello
 def "nur hello" [
     name: string = "world"  # The name to say hello to
@@ -107,7 +107,7 @@ This means you define `nur` tasks  like `def "nur something"` - which you can th
 `nur something`. `nur` tasks can call any other `nu` commands or system command.
 
 The most basic `nur` task could look like this:
-```shell
+```nu-script
 def "nur hello-world" [] {
     print "Hello world"
 }
@@ -136,7 +136,7 @@ redirected mixed output and result in errors handling the results. When using `n
 accordingly.
 
 An example using `print`:
-```shell
+```nu-script
 def "nur do-something-useful" [] {
     print "We will do something useful now:"
     run-command-1 | print
@@ -179,7 +179,7 @@ An example using a default value could look like this:
 `def "nur taskname" [argument1 = "value", argument2 = 10] { ... }`
 
 Example with different kinds of arguments:
-```shell
+```nu-script
 def "nur something" [
     name: string
     optional?: string
@@ -199,7 +199,7 @@ Basic rule is that the commend right above your task will be used as a descripti
 Comments next to any argument will be used to document that argument.
 
 Example task documentation:
-```shell
+```nu-script
 # This is the documentation used for your task
 # you may use multiple lines
 #
@@ -245,7 +245,7 @@ The same rule applies to your user defined functions, you would for example prov
 named `grep` (`def grep [] { ... }`) which could call the `grep` command using `^grep`.
 
 Example calling `ls` and `sort` system commands:
-```shell
+```nu-script
 def "nur call-sort" [] {
     ^ls | ^sort
 }
@@ -261,7 +261,7 @@ If you want to use a `nur` to run and wrap any normal command - for example to e
 any subdirectory of your project - I recommend using the following schema (using the `poetry`
 package manager as an example):
 
-```shell
+```nu-script
 def --wrapped "nur poetry" [...args] {
     poetry ...$args
 }
@@ -299,7 +299,7 @@ Getting the `docker ps` text data input `nu` can for example be done using `dock
 for more possible input formats.
 
 To get the first container matching using the image `some-name` you could use this command:  
-```shell
+```nu-script
 docker ps | from ssv | where IMAGE == "some-name" | get "CONTAINER ID" | first
 ```
 
@@ -321,7 +321,7 @@ you may want to read the [`nu` documentation on pipelines](https://www.nushell.s
 You can define any command you like and need to use. Just know that subcommands to `"nur"` will
 be available as tasks. All other commands will not be available.
 
-```shell
+```nu-script
 def some-helper [] {
     do-something-useful
 }
@@ -340,7 +340,7 @@ called `.nurscripts/` into `$env.NU_LIB_DIRS`. This allows you to define `nu` mo
 then use those in your `nurfile`.
 
 Basic hello world example:
-```shell
+```nu-script
 # .nurscripts/hello-world.nu
 
 export def main [] {
