@@ -29,10 +29,15 @@ nu-utils = "0.91.0"
 thiserror = "1.0.57"
 
 [features]
-default = ["extra", "dataframe"]
+default = ["extra"]
 extra = ["dep:nu-cmd-extra", "nu-cmd-lang/extra"]
 dataframe = ["dep:nu-cmd-dataframe", "nu-cmd-dataframe/dataframe"]
 debug = []
 
 [dev-dependencies]
 tempfile = "3.10.1"
+
+[profile.release]
+opt-level = "s"     # Optimize for size
+strip = "debuginfo"
+lto = "thin"
