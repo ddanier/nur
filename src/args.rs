@@ -1,3 +1,4 @@
+use crate::commands::Nur;
 use nu_engine::{get_full_help, CallExt};
 use nu_parser::parse;
 use nu_parser::{escape_for_script_arg, escape_quote_string};
@@ -9,14 +10,13 @@ use nu_protocol::{
     // Spanned,
 };
 use nu_utils::stdout_write_all_and_flush;
-use crate::commands::Nur;
 
 pub(crate) fn gather_commandline_args() -> (Vec<String>, String, Vec<String>) {
     let mut args_to_nur = Vec::from(["nur".into()]);
     let mut task_name = String::new();
     let mut args = std::env::args();
 
-    args.next();  // Ignore own name
+    args.next(); // Ignore own name
     while let Some(arg) = args.next() {
         if !arg.starts_with('-') {
             task_name = arg;
@@ -69,12 +69,12 @@ pub(crate) fn parse_commandline_args(
     // We should have a successful parse now
     if let Some(pipeline) = block.pipelines.first() {
         if let Some(PipelineElement::Expression(
-                        _,
-                        Expression {
-                            expr: Expr::Call(call),
-                            ..
-                        },
-                    )) = pipeline.elements.first()
+            _,
+            Expression {
+                expr: Expr::Call(call),
+                ..
+            },
+        )) = pipeline.elements.first()
         {
             // let config_file = call.get_flag_expr("config");
             let list_tasks = call.has_flag(engine_state, &mut stack, "list")?;

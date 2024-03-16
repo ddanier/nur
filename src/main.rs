@@ -1,25 +1,28 @@
-mod engine;
 mod args;
-mod context;
-mod errors;
-mod path;
-mod nu_version;
 mod commands;
+mod context;
+mod engine;
+mod errors;
+mod nu_version;
+mod path;
 
+use crate::args::{gather_commandline_args, parse_commandline_args};
+use crate::commands::Nur;
+use crate::context::Context;
+use crate::engine::init_engine_state;
+use crate::errors::NurError;
+use crate::path::find_project_path;
+use miette::Result;
+use nu_ansi_term::Color;
+use nu_cmd_base::util::get_init_cwd;
+use nu_protocol::engine::StateWorkingSet;
+use nu_protocol::{
+    eval_const::create_nu_constant, BufferedReader, PipelineData, RawStream, Record, Span, Type,
+    Value, NU_VARIABLE_ID,
+};
 use std::env;
 use std::io::BufReader;
 use std::process::ExitCode;
-use nu_cmd_base::util::get_init_cwd;
-use crate::engine::init_engine_state;
-use crate::args::{gather_commandline_args, parse_commandline_args};
-use nu_protocol::{Span, NU_VARIABLE_ID, eval_const::create_nu_constant, PipelineData, RawStream, BufferedReader, Value, Record, Type};
-use miette::Result;
-use nu_protocol::engine::StateWorkingSet;
-use nu_ansi_term::Color;
-use crate::commands::Nur;
-use crate::context::Context;
-use crate::errors::NurError;
-use crate::path::find_project_path;
 
 fn main() -> Result<ExitCode, miette::ErrReport> {
     // Get initial directory details
@@ -69,16 +72,19 @@ fn main() -> Result<ExitCode, miette::ErrReport> {
         eprintln!("nurscripts path: {:?}", nurscripts_path);
     }
     if nurscripts_path.exists() && nurscripts_path.is_dir() {
-        engine_state.add_env_var("NU_LIB_DIRS".into(), Value::list(
-            vec![Value::string(String::from(nurscripts_path.to_str().unwrap()), Span::unknown())],
-            Span::unknown(),
-        ));
+        engine_state.add_env_var(
+            "NU_LIB_DIRS".into(),
+            Value::list(
+                vec![Value::string(
+                    String::from(nurscripts_path.to_str().unwrap()),
+                    Span::unknown(),
+                )],
+                Span::unknown(),
+            ),
+        );
     } else {
         // Ensure we do not load user libraries
-        engine_state.add_env_var("NU_LIB_DIRS".into(), Value::list(
-            vec![],
-            Span::unknown(),
-        ));
+        engine_state.add_env_var("NU_LIB_DIRS".into(), Value::list(vec![], Span::unknown()));
     }
 
     // if parsed_nur_args.config_file.is_some() {
@@ -86,23 +92,26 @@ fn main() -> Result<ExitCode, miette::ErrReport> {
     // }
 
     // Set up the $nu constant before evaluating any files (need to have $nu available in them)
-    let nu_const = create_nu_constant(&engine_state, PipelineData::empty().span().unwrap_or_else(Span::unknown))?;
+    let nu_const = create_nu_constant(
+        &engine_state,
+        PipelineData::empty().span().unwrap_or_else(Span::unknown),
+    )?;
     engine_state.set_variable_const_val(NU_VARIABLE_ID, nu_const);
 
     // Add $nur constant record (like $nu)
     let mut nur_record = Record::new();
-    nur_record.push("run-path", Value::string(
-        String::from(init_cwd.to_str().unwrap()),
-        Span::unknown(),
-    ));
-    nur_record.push("project-path", Value::string(
-        String::from(project_path.to_str().unwrap()),
-        Span::unknown(),
-    ));
-    nur_record.push("task-name", Value::string(
-        &task_name,
-        Span::unknown(),
-    ));
+    nur_record.push(
+        "run-path",
+        Value::string(String::from(init_cwd.to_str().unwrap()), Span::unknown()),
+    );
+    nur_record.push(
+        "project-path",
+        Value::string(
+            String::from(project_path.to_str().unwrap()),
+            Span::unknown(),
+        ),
+    );
+    nur_record.push("task-name", Value::string(&task_name, Span::unknown()));
     let mut working_set = StateWorkingSet::new(&engine_state);
     let nur_var_id = working_set.add_variable(
         "nur".as_bytes().into(),
@@ -125,16 +134,10 @@ fn main() -> Result<ExitCode, miette::ErrReport> {
         eprintln!("nurfile local path: {:?}", local_nurfile_path);
     }
     if nurfile_path.exists() {
-        context.source(
-            nurfile_path,
-            PipelineData::empty(),
-        )?;
+        context.source(nurfile_path, PipelineData::empty())?;
     }
     if local_nurfile_path.exists() {
-        context.source(
-            local_nurfile_path,
-            PipelineData::empty(),
-        )?;
+        context.source(local_nurfile_path, PipelineData::empty())?;
     }
 
     // Handle list tasks
@@ -162,9 +165,7 @@ fn main() -> Result<ExitCode, miette::ErrReport> {
         } else if let Some(command) = context.get_def(task_def_name) {
             context.clone().print_help(command);
         } else {
-            return Err(miette::ErrReport::from(
-                NurError::TaskNotFound(task_name)
-            ));
+            return Err(miette::ErrReport::from(NurError::TaskNotFound(task_name)));
         }
 
         std::process::exit(0);
@@ -172,9 +173,7 @@ fn main() -> Result<ExitCode, miette::ErrReport> {
 
     // Check if requested task exists
     if !context.has_def(&task_def_name) {
-        return Err(miette::ErrReport::from(
-            NurError::TaskNotFound(task_name)
-        ));
+        return Err(miette::ErrReport::from(NurError::TaskNotFound(task_name)));
     }
 
     // Prepare input data - if requested
@@ -207,10 +206,7 @@ fn main() -> Result<ExitCode, miette::ErrReport> {
         eprintln!("full task call: {}", full_task_call);
     }
     if parsed_nur_args.quiet_execution {
-        exit_code = context.eval(
-            full_task_call,
-            input,
-        )?;
+        exit_code = context.eval(full_task_call, input)?;
 
         #[cfg(feature = "debug")]
         if parsed_nur_args.debug_output {
@@ -221,10 +217,7 @@ fn main() -> Result<ExitCode, miette::ErrReport> {
         println!("Project path {:?}", project_path);
         println!("Executing task {}", task_name);
         println!();
-        exit_code = context.eval_and_print(
-            full_task_call,
-            input,
-        )?;
+        exit_code = context.eval_and_print(full_task_call, input)?;
         #[cfg(feature = "debug")]
         if parsed_nur_args.debug_output {
             println!("Exit code {:?}", exit_code);
@@ -232,14 +225,30 @@ fn main() -> Result<ExitCode, miette::ErrReport> {
         if exit_code == 0 {
             println!(
                 "{}Task execution successful{}",
-                if use_color { Color::Green.prefix().to_string() } else { String::from("") },
-                if use_color { Color::Green.suffix().to_string() } else { String::from("") },
+                if use_color {
+                    Color::Green.prefix().to_string()
+                } else {
+                    String::from("")
+                },
+                if use_color {
+                    Color::Green.suffix().to_string()
+                } else {
+                    String::from("")
+                },
             );
         } else {
             println!(
                 "{}Task execution failed{}",
-                if use_color { Color::Red.prefix().to_string() } else { String::from("") },
-                if use_color { Color::Red.suffix().to_string() } else { String::from("") },
+                if use_color {
+                    Color::Red.prefix().to_string()
+                } else {
+                    String::from("")
+                },
+                if use_color {
+                    Color::Red.suffix().to_string()
+                } else {
+                    String::from("")
+                },
             );
         }
     }

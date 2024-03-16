@@ -1,9 +1,7 @@
-use std::path::Path;
 use crate::errors::{NurError, NurResult};
+use std::path::Path;
 
-pub fn find_project_path(
-    cwd: &Path,
-) -> NurResult<&Path> {
+pub fn find_project_path(cwd: &Path) -> NurResult<&Path> {
     let mut path = cwd;
 
     loop {
@@ -23,8 +21,8 @@ pub fn find_project_path(
 #[cfg(test)]
 mod tests {
     use super::*;
-    use tempfile::tempdir;
     use std::fs::{create_dir, File};
+    use tempfile::tempdir;
 
     #[test]
     fn test_find_project_path() {

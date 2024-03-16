@@ -1,7 +1,9 @@
 use nu_engine::get_full_help;
-use nu_protocol::engine::{Command, EngineState, Stack};
-use nu_protocol::{Category, Example, IntoPipelineData, PipelineData, ShellError, Signature, SyntaxShape, Value};
 use nu_protocol::ast::Call;
+use nu_protocol::engine::{Command, EngineState, Stack};
+use nu_protocol::{
+    Category, Example, IntoPipelineData, PipelineData, ShellError, Signature, SyntaxShape, Value,
+};
 
 #[derive(Clone)]
 pub struct Nur;
@@ -14,7 +16,8 @@ impl Command for Nur {
     fn signature(&self) -> Signature {
         let mut signature = Signature::build("nur");
 
-        signature = signature.usage("nu run - simple task runner.")
+        signature = signature
+            .usage("nu run - simple task runner.")
             .allows_unknown_args()
             // .named(
             //     "config",
@@ -22,26 +25,14 @@ impl Command for Nur {
             //     "path to config",
             //     None,
             // )
-            .switch(
-                "version",
-                "output version number and exit",
-                None,
-            )
-            .switch(
-                "list",
-                "list available tasks and then just exit",
-                None,
-            )
+            .switch("version", "output version number and exit", None)
+            .switch("list", "list available tasks and then just exit", None)
             .switch(
                 "quiet",
                 "Do not output anything but what tasks produce",
                 None,
             )
-            .switch(
-                "stdin",
-                "Attach stdin to nu function call",
-                None,
-            )
+            .switch("stdin", "Attach stdin to nu function call", None)
             .optional(
                 "task name",
                 SyntaxShape::Filepath,
@@ -56,11 +47,7 @@ impl Command for Nur {
 
         #[cfg(feature = "debug")]
         {
-            signature = signature.switch(
-                "debug",
-                "Show debug details",
-                None,
-            );
+            signature = signature.switch("debug", "Show debug details", None);
         }
 
         signature
@@ -81,7 +68,7 @@ impl Command for Nur {
             get_full_help(&Nur.signature(), &Nur.examples(), engine_state, stack, true),
             call.head,
         )
-            .into_pipeline_data())
+        .into_pipeline_data())
     }
 
     fn examples(&self) -> Vec<Example> {
