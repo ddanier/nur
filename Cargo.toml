@@ -18,6 +18,7 @@ nu-cli = "0.91.0"
 nu-cmd-base = "0.91.0"
 nu-cmd-dataframe = { version = "0.91.0", optional = true }
 nu-cmd-extra = { version = "0.91.0", optional = true }
+nu-plugin = { version = "0.91.0", optional = true }
 nu-cmd-lang = "0.91.0"
 nu-command = "0.91.0"
 nu-engine = "0.91.0"
@@ -32,6 +33,14 @@ thiserror = "1.0.57"
 default = ["extra"]
 extra = ["dep:nu-cmd-extra", "nu-cmd-lang/extra"]
 dataframe = ["dep:nu-cmd-dataframe", "nu-cmd-dataframe/dataframe"]
+plugin = [
+    "dep:nu-plugin",
+    "nu-cli/plugin",
+    "nu-parser/plugin",
+    "nu-command/plugin",
+    "nu-protocol/plugin",
+    "nu-engine/plugin",
+]
 debug = []
 
 [dev-dependencies]

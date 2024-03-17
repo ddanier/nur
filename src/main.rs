@@ -14,13 +14,17 @@ use crate::engine::init_engine_state;
 use crate::errors::NurError;
 use crate::names::{
     NUR_CONFIG_CONFIG_FILENAME, NUR_CONFIG_ENV_FILENAME, NUR_CONFIG_LIB_PATH, NUR_CONFIG_PATH,
-    NUR_FILE, NUR_LOCAL_FILE, NUR_NAME, NUR_VAR_PROJECT_PATH, NUR_VAR_RUN_PATH, NUR_VAR_TASK_NAME,
+    NUR_FILE, NUR_LOCAL_FILE, NUR_NAME, NUR_VAR_CONFIG_DIR, NUR_VAR_PROJECT_PATH, NUR_VAR_RUN_PATH,
+    NUR_VAR_TASK_NAME,
 };
 #[cfg(feature = "plugin")]
 use crate::names::{NUR_CONFIG_PLUGIN_FILENAME, NUR_CONFIG_PLUGIN_PATH};
 use crate::path::find_project_path;
 use miette::Result;
 use nu_ansi_term::Color;
+use nu_cli::gather_parent_env_vars;
+#[cfg(feature = "plugin")]
+use nu_cli::read_plugin_file;
 use nu_cmd_base::util::get_init_cwd;
 use nu_protocol::engine::StateWorkingSet;
 use nu_protocol::{
@@ -104,7 +108,6 @@ fn main() -> Result<ExitCode, miette::ErrReport> {
     }
 
     // Set up the $nu constant before evaluating any files (need to have $nu available in them)
-    // TODO: Can we change default-config-dir to $project-path/.nur?
     let nu_const = create_nu_constant(
         &engine_state,
         PipelineData::empty().span().unwrap_or_else(Span::unknown),
@@ -128,6 +131,13 @@ fn main() -> Result<ExitCode, miette::ErrReport> {
         NUR_VAR_TASK_NAME,
         Value::string(&task_name, Span::unknown()),
     );
+    nur_record.push(
+        NUR_VAR_CONFIG_DIR,
+        Value::string(
+            String::from(nur_config_dir.to_str().unwrap()),
+            Span::unknown(),
+        ),
+    );
     let mut working_set = StateWorkingSet::new(&engine_state);
     let nur_var_id = working_set.add_variable(
         NUR_NAME.as_bytes().into(),
@@ -138,8 +148,18 @@ fn main() -> Result<ExitCode, miette::ErrReport> {
     engine_state.merge_delta(working_set.render())?;
     engine_state.set_variable_const_val(nur_var_id, Value::record(nur_record, Span::unknown()));
 
-    // Add std library
+    // Further engine setup
+    gather_parent_env_vars(&mut engine_state, project_path);
     load_standard_library(&mut engine_state)?;
+
+    // Load all config dir files, if those exist
+    #[cfg(feature = "plugin")]
+    read_plugin_file(
+        engine_state,
+        &mut stack,
+        parsed_nu_cli_args.plugin_file,
+        NUSHELL_FOLDER,
+    );
 
     // Switch to using context
     let mut context = Context::from(engine_state);
