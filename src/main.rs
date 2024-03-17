@@ -3,6 +3,7 @@ mod commands;
 mod context;
 mod engine;
 mod errors;
+mod names;
 mod nu_version;
 mod path;
 
@@ -11,6 +12,12 @@ use crate::commands::Nur;
 use crate::context::Context;
 use crate::engine::init_engine_state;
 use crate::errors::NurError;
+use crate::names::{
+    NUR_CONFIG_CONFIG_FILENAME, NUR_CONFIG_ENV_FILENAME, NUR_CONFIG_LIB_PATH, NUR_CONFIG_PATH,
+    NUR_FILE, NUR_LOCAL_FILE, NUR_NAME, NUR_VAR_PROJECT_PATH, NUR_VAR_RUN_PATH, NUR_VAR_TASK_NAME,
+};
+#[cfg(feature = "plugin")]
+use crate::names::{NUR_CONFIG_PLUGIN_FILENAME, NUR_CONFIG_PLUGIN_PATH};
 use crate::path::find_project_path;
 use miette::Result;
 use nu_ansi_term::Color;
@@ -20,6 +27,7 @@ use nu_protocol::{
     eval_const::create_nu_constant, BufferedReader, PipelineData, RawStream, Record, Span, Type,
     Value, NU_VARIABLE_ID,
 };
+use nu_std::load_standard_library;
 use std::env;
 use std::io::BufReader;
 use std::process::ExitCode;
@@ -47,51 +55,56 @@ fn main() -> Result<ExitCode, miette::ErrReport> {
         eprintln!("project_path: {:?}", project_path);
     }
 
-    // Init config
-    // TODO: Setup config/env nu file?
-    // engine_state.set_config_path("nur-config", path);
-    // set_config_path(
-    //     &mut engine_state,
-    //     &init_cwd,
-    //     "config.nu",
-    //     "config-path",
-    //     parsed_nu_cli_args.config_file.as_ref(),
-    // );
-    // set_config_path(
-    //     &mut engine_state,
-    //     &init_cwd,
-    //     "env.nu",
-    //     "env-path",
-    //     parsed_nu_cli_args.env_file.as_ref(),
-    // );
-
-    // Add library path in project
-    let nurscripts_path = project_path.join(".nurscripts");
+    // Base path for nur config/env
+    let nur_config_dir = project_path.join(NUR_CONFIG_PATH);
     #[cfg(feature = "debug")]
     if parsed_nur_args.debug_output {
-        eprintln!("nurscripts path: {:?}", nurscripts_path);
-    }
-    if nurscripts_path.exists() && nurscripts_path.is_dir() {
-        engine_state.add_env_var(
-            "NU_LIB_DIRS".into(),
-            Value::list(
-                vec![Value::string(
-                    String::from(nurscripts_path.to_str().unwrap()),
-                    Span::unknown(),
-                )],
-                Span::unknown(),
-            ),
-        );
-    } else {
-        // Ensure we do not load user libraries
-        engine_state.add_env_var("NU_LIB_DIRS".into(), Value::list(vec![], Span::unknown()));
+        eprintln!("nur config path: {:?}", nur_config_dir);
     }
 
-    // if parsed_nur_args.config_file.is_some() {
-    //     eprintln!("WARNING: Config files are not supported yet.")
-    // }
+    // Set default scripts path
+    let mut nur_lib_dir_path = nur_config_dir.clone();
+    nur_lib_dir_path.push(NUR_CONFIG_LIB_PATH);
+    engine_state.add_env_var(
+        "NU_LIB_DIRS".to_string(),
+        Value::test_string(nur_lib_dir_path.to_string_lossy()),
+    );
+    #[cfg(feature = "debug")]
+    if parsed_nur_args.debug_output {
+        eprintln!("nur scripts path: {:?}", nur_lib_dir_path);
+    }
+
+    #[cfg(feature = "plugin")]
+    {
+        // Set default plugin path
+        let mut nur_plugin_dirs_path = nur_config_dir.clone();
+        nur_plugin_dirs_path.push(NUR_CONFIG_PLUGIN_PATH);
+        engine_state.add_env_var(
+            "NU_PLUGIN_DIRS".to_string(),
+            Value::test_string(nur_plugin_dirs_path.to_string_lossy()),
+        );
+        #[cfg(feature = "debug")]
+        if parsed_nur_args.debug_output {
+            eprintln!("nur plugins path: {:?}", nur_plugin_dirs_path);
+        }
+    }
+
+    // Set config and env paths to .nur versions
+    let mut nur_config_path = nur_config_dir.clone();
+    nur_config_path.push(NUR_CONFIG_CONFIG_FILENAME);
+    engine_state.set_config_path("config-path", nur_config_path);
+    let mut nur_env_path = nur_config_dir.clone();
+    nur_env_path.push(NUR_CONFIG_ENV_FILENAME);
+    engine_state.set_config_path("env-path", nur_env_path);
+    #[cfg(feature = "plugin")]
+    {
+        let mut nur_plugin_path = nur_config_dir.clone();
+        nur_plugin_path.push(NUR_CONFIG_PLUGIN_FILENAME);
+        engine_state.set_config_path("plugin-path", nur_plugin_path);
+    }
 
     // Set up the $nu constant before evaluating any files (need to have $nu available in them)
+    // TODO: Can we change default-config-dir to $project-path/.nur?
     let nu_const = create_nu_constant(
         &engine_state,
         PipelineData::empty().span().unwrap_or_else(Span::unknown),
@@ -101,20 +114,23 @@ fn main() -> Result<ExitCode, miette::ErrReport> {
     // Add $nur constant record (like $nu)
     let mut nur_record = Record::new();
     nur_record.push(
-        "run-path",
+        NUR_VAR_RUN_PATH,
         Value::string(String::from(init_cwd.to_str().unwrap()), Span::unknown()),
     );
     nur_record.push(
-        "project-path",
+        NUR_VAR_PROJECT_PATH,
         Value::string(
             String::from(project_path.to_str().unwrap()),
             Span::unknown(),
         ),
     );
-    nur_record.push("task-name", Value::string(&task_name, Span::unknown()));
+    nur_record.push(
+        NUR_VAR_TASK_NAME,
+        Value::string(&task_name, Span::unknown()),
+    );
     let mut working_set = StateWorkingSet::new(&engine_state);
     let nur_var_id = working_set.add_variable(
-        "nur".as_bytes().into(),
+        NUR_NAME.as_bytes().into(),
         Span::unknown(),
         Type::Record(vec![]),
         false,
@@ -122,12 +138,15 @@ fn main() -> Result<ExitCode, miette::ErrReport> {
     engine_state.merge_delta(working_set.render())?;
     engine_state.set_variable_const_val(nur_var_id, Value::record(nur_record, Span::unknown()));
 
+    // Add std library
+    load_standard_library(&mut engine_state)?;
+
     // Switch to using context
     let mut context = Context::from(engine_state);
 
     // Load task files
-    let nurfile_path = project_path.join("nurfile");
-    let local_nurfile_path = project_path.join("nurfile.local");
+    let nurfile_path = project_path.join(NUR_FILE);
+    let local_nurfile_path = project_path.join(NUR_LOCAL_FILE);
     #[cfg(feature = "debug")]
     if parsed_nur_args.debug_output {
         eprintln!("nurfile path: {:?}", nurfile_path);
@@ -152,7 +171,7 @@ fn main() -> Result<ExitCode, miette::ErrReport> {
     }
 
     // Initialize internal data
-    let task_def_name = format!("nur {}", task_name);
+    let task_def_name = format!("{} {}", NUR_NAME, task_name);
     #[cfg(feature = "debug")]
     if parsed_nur_args.debug_output {
         eprintln!("task def name: {}", task_def_name);

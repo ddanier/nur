@@ -1,4 +1,5 @@
 use crate::commands::Nur;
+use crate::names::NUR_NAME;
 use nu_engine::{get_full_help, CallExt};
 use nu_parser::parse;
 use nu_parser::{escape_for_script_arg, escape_quote_string};
@@ -12,7 +13,7 @@ use nu_protocol::{
 use nu_utils::stdout_write_all_and_flush;
 
 pub(crate) fn gather_commandline_args() -> (Vec<String>, String, Vec<String>) {
-    let mut args_to_nur = Vec::from(["nur".into()]);
+    let mut args_to_nur = Vec::from([NUR_NAME.into()]);
     let mut task_name = String::new();
     let mut args = std::env::args();
 
@@ -58,7 +59,7 @@ pub(crate) fn parse_commandline_args(
             std::process::exit(1);
         }
 
-        working_set.hide_decl(b"nur");
+        working_set.hide_decl(NUR_NAME.as_bytes());
         (output, working_set.render())
     };
 

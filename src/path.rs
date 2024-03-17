@@ -1,11 +1,12 @@
 use crate::errors::{NurError, NurResult};
+use crate::names::NUR_FILE;
 use std::path::Path;
 
 pub fn find_project_path(cwd: &Path) -> NurResult<&Path> {
     let mut path = cwd;
 
     loop {
-        let taskfile_path = path.join("nurfile");
+        let taskfile_path = path.join(NUR_FILE);
         if taskfile_path.exists() {
             return Ok(path);
         }
@@ -29,7 +30,7 @@ mod tests {
         // Create a temporary directory and a "nurfile" inside it
         let temp_dir = tempdir().unwrap();
         let temp_dir_path = temp_dir.path().to_path_buf();
-        let nurfile_path = temp_dir.path().join("nurfile");
+        let nurfile_path = temp_dir.path().join(NUR_FILE);
         File::create(&nurfile_path).unwrap();
 
         // Test the function with the temporary directory as the current working directory
@@ -50,7 +51,7 @@ mod tests {
         create_dir(&sub_dir).unwrap();
 
         // Create a "nurfile" inside the temporary directory
-        let nurfile_path = temp_dir_path.join("nurfile");
+        let nurfile_path = temp_dir_path.join(NUR_FILE);
         File::create(&nurfile_path).unwrap();
 
         // Test the function with the subdirectory as the current working directory
