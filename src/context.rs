@@ -1,4 +1,6 @@
 use crate::errors::{NurError, NurResult};
+#[cfg(feature = "plugin")]
+use nu_cli::read_plugin_file;
 use nu_engine::get_full_help;
 use nu_protocol::engine::Command;
 use nu_protocol::report_error;
@@ -7,6 +9,8 @@ use nu_protocol::{
     engine::{EngineState, Stack, StateWorkingSet},
     PipelineData, Value,
 };
+#[cfg(feature = "plugin")]
+use nu_protocol::{Span, Spanned};
 use nu_utils::stdout_write_all_and_flush;
 use std::fs;
 use std::path::Path;
@@ -55,6 +59,7 @@ impl Context {
         contents: S,
         input: PipelineData,
         print: bool,
+        merge_env: bool,
     ) -> NurResult<i64> {
         let str_contents = contents.to_string();
 
@@ -66,6 +71,23 @@ impl Context {
 
         let result = self._execute_block(&block, input)?;
 
+        // Merge env is requested
+        if merge_env {
+            match nu_engine::env::current_dir(&self.engine_state, &self.stack) {
+                Ok(cwd) => {
+                    if let Err(e) = self.engine_state.merge_env(&mut self.stack, cwd) {
+                        let working_set = StateWorkingSet::new(&self.engine_state);
+                        report_error(&working_set, &e);
+                    }
+                }
+                Err(e) => {
+                    let working_set = StateWorkingSet::new(&self.engine_state);
+                    report_error(&working_set, &e);
+                }
+            }
+        }
+
+        // Print result is requested
         if print {
             let exit_code = result.print(&self.engine_state, &mut self.stack, false, false)?;
             Ok(exit_code)
@@ -88,7 +110,7 @@ impl Context {
     }
 
     pub fn eval<S: ToString>(&mut self, contents: S, input: PipelineData) -> NurResult<i64> {
-        self._eval(None, contents, input, false)
+        self._eval(None, contents, input, false, false)
     }
 
     pub fn eval_and_print<S: ToString>(
@@ -96,13 +118,46 @@ impl Context {
         contents: S,
         input: PipelineData,
     ) -> NurResult<i64> {
-        self._eval(None, contents, input, true)
+        self._eval(None, contents, input, true, false)
+    }
+
+    pub fn eval_and_merge_env<S: ToString>(
+        &mut self,
+        contents: S,
+        input: PipelineData,
+    ) -> NurResult<i64> {
+        self._eval(None, contents, input, false, true)
     }
 
     pub fn source<P: AsRef<Path>>(&mut self, file_path: P, input: PipelineData) -> NurResult<i64> {
         let contents = fs::read_to_string(&file_path)?;
 
-        self._eval(file_path.as_ref().to_str(), contents, input, false)
+        self._eval(file_path.as_ref().to_str(), contents, input, false, false)
+    }
+
+    pub fn source_and_merge_env<P: AsRef<Path>>(
+        &mut self,
+        file_path: P,
+        input: PipelineData,
+    ) -> NurResult<i64> {
+        let contents = fs::read_to_string(&file_path)?;
+
+        self._eval(file_path.as_ref().to_str(), contents, input, false, true)
+    }
+
+    #[cfg(feature = "plugin")]
+    pub fn read_plugin_file<P: AsRef<Path>>(&mut self, nur_plugin_path: P) {
+        if nur_plugin_path.as_ref().exists() {
+            read_plugin_file(
+                &mut self.engine_state,
+                &mut self.stack,
+                Some(Spanned {
+                    item: String::from(nur_plugin_path.as_ref().to_str().unwrap()),
+                    span: Span::unknown(),
+                }),
+                "nushell", // will never be used, as we have set nur_plugin_path
+            );
+        }
     }
 
     pub fn has_def<S: AsRef<str>>(&self, name: S) -> bool {

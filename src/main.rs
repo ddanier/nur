@@ -23,8 +23,6 @@ use crate::path::find_project_path;
 use miette::Result;
 use nu_ansi_term::Color;
 use nu_cli::gather_parent_env_vars;
-#[cfg(feature = "plugin")]
-use nu_cli::read_plugin_file;
 use nu_cmd_base::util::get_init_cwd;
 use nu_protocol::engine::StateWorkingSet;
 use nu_protocol::{
@@ -32,6 +30,7 @@ use nu_protocol::{
     Value, NU_VARIABLE_ID,
 };
 use nu_std::load_standard_library;
+use nu_utils::{get_default_config, get_default_env};
 use std::env;
 use std::io::BufReader;
 use std::process::ExitCode;
@@ -94,18 +93,19 @@ fn main() -> Result<ExitCode, miette::ErrReport> {
     }
 
     // Set config and env paths to .nur versions
-    let mut nur_config_path = nur_config_dir.clone();
-    nur_config_path.push(NUR_CONFIG_CONFIG_FILENAME);
-    engine_state.set_config_path("config-path", nur_config_path);
     let mut nur_env_path = nur_config_dir.clone();
     nur_env_path.push(NUR_CONFIG_ENV_FILENAME);
-    engine_state.set_config_path("env-path", nur_env_path);
+    engine_state.set_config_path("env-path", nur_env_path.clone());
+    let mut nur_config_path = nur_config_dir.clone();
+    nur_config_path.push(NUR_CONFIG_CONFIG_FILENAME);
+    engine_state.set_config_path("config-path", nur_config_path.clone());
     #[cfg(feature = "plugin")]
-    {
+    let nur_plugin_path = {
         let mut nur_plugin_path = nur_config_dir.clone();
         nur_plugin_path.push(NUR_CONFIG_PLUGIN_FILENAME);
-        engine_state.set_config_path("plugin-path", nur_plugin_path);
-    }
+        engine_state.set_config_path("plugin-path", nur_plugin_path.clone());
+        nur_plugin_path
+    };
 
     // Set up the $nu constant before evaluating any files (need to have $nu available in them)
     let nu_const = create_nu_constant(
@@ -152,17 +152,22 @@ fn main() -> Result<ExitCode, miette::ErrReport> {
     gather_parent_env_vars(&mut engine_state, project_path);
     load_standard_library(&mut engine_state)?;
 
-    // Load all config dir files, if those exist
-    #[cfg(feature = "plugin")]
-    read_plugin_file(
-        engine_state,
-        &mut stack,
-        parsed_nu_cli_args.plugin_file,
-        NUSHELL_FOLDER,
-    );
-
     // Switch to using context
     let mut context = Context::from(engine_state);
+
+    // Load end and context
+    #[cfg(feature = "plugin")]
+    context.read_plugin_file(&nur_plugin_path);
+    if nur_env_path.exists() {
+        context.source_and_merge_env(&nur_env_path, PipelineData::empty())?;
+    } else {
+        context.eval_and_merge_env(get_default_env(), PipelineData::empty())?;
+    }
+    if nur_config_path.exists() {
+        context.source_and_merge_env(&nur_config_path, PipelineData::empty())?;
+    } else {
+        context.eval_and_merge_env(get_default_config(), PipelineData::empty())?;
+    }
 
     // Load task files
     let nurfile_path = project_path.join(NUR_FILE);
