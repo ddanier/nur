@@ -67,6 +67,24 @@ fn main() -> Result<ExitCode, miette::ErrReport> {
         eprintln!("nur config path: {:?}", nur_config_dir);
     }
 
+    // Give some hints if old ".nurscripts" exists
+    let old_nur_lib_path = project_path.join(".nurscripts");
+    if old_nur_lib_path.exists() && old_nur_lib_path.is_dir() {
+        eprintln!(
+            "{}WARNING: .nurscripts/ has moved to .nur/scripts/ -> please update your project{}",
+            if use_color {
+                Color::Red.prefix().to_string()
+            } else {
+                String::from("")
+            },
+            if use_color {
+                Color::Red.suffix().to_string()
+            } else {
+                String::from("")
+            },
+        );
+    }
+
     // Set default scripts path
     let mut nur_lib_dir_path = nur_config_dir.clone();
     nur_lib_dir_path.push(NUR_CONFIG_LIB_PATH);
