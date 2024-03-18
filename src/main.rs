@@ -1,6 +1,7 @@
 mod args;
 mod commands;
 mod context;
+mod defaults;
 mod engine;
 mod errors;
 mod names;
@@ -10,27 +11,27 @@ mod path;
 use crate::args::{gather_commandline_args, parse_commandline_args};
 use crate::commands::Nur;
 use crate::context::Context;
+use crate::defaults::{get_default_config, get_default_env, get_default_nur_env};
 use crate::engine::init_engine_state;
 use crate::errors::NurError;
 use crate::names::{
     NUR_CONFIG_CONFIG_FILENAME, NUR_CONFIG_ENV_FILENAME, NUR_CONFIG_LIB_PATH, NUR_CONFIG_PATH,
-    NUR_FILE, NUR_LOCAL_FILE, NUR_NAME, NUR_VAR_CONFIG_DIR, NUR_VAR_PROJECT_PATH, NUR_VAR_RUN_PATH,
+    NUR_CONFIG_PLUGIN_FILENAME, NUR_CONFIG_PLUGIN_PATH, NUR_ENV_NU_LIB_DIRS,
+    NUR_ENV_NU_PLUGIN_DIRS, NUR_FILE, NUR_LOCAL_FILE, NUR_NAME, NUR_VAR_CONFIG_DIR,
+    NUR_VAR_DEFAULT_LIB_DIR, NUR_VAR_DEFAULT_PLUGIN_DIR, NUR_VAR_PROJECT_PATH, NUR_VAR_RUN_PATH,
     NUR_VAR_TASK_NAME,
 };
-#[cfg(feature = "plugin")]
-use crate::names::{NUR_CONFIG_PLUGIN_FILENAME, NUR_CONFIG_PLUGIN_PATH};
 use crate::path::find_project_path;
 use miette::Result;
 use nu_ansi_term::Color;
 use nu_cli::gather_parent_env_vars;
 use nu_cmd_base::util::get_init_cwd;
-use nu_protocol::engine::StateWorkingSet;
+use nu_protocol::engine::{Stack, StateWorkingSet};
 use nu_protocol::{
     eval_const::create_nu_constant, BufferedReader, PipelineData, RawStream, Record, Span, Type,
     Value, NU_VARIABLE_ID,
 };
 use nu_std::load_standard_library;
-use nu_utils::{get_default_config, get_default_env};
 use std::env;
 use std::io::BufReader;
 use std::process::ExitCode;
@@ -42,6 +43,7 @@ fn main() -> Result<ExitCode, miette::ErrReport> {
 
     // Initialize nu engine state
     let mut engine_state = init_engine_state(project_path)?;
+    let mut stack = Stack::new();
     let use_color = engine_state.get_config().use_ansi_coloring;
 
     // Parse args
@@ -69,7 +71,7 @@ fn main() -> Result<ExitCode, miette::ErrReport> {
     let mut nur_lib_dir_path = nur_config_dir.clone();
     nur_lib_dir_path.push(NUR_CONFIG_LIB_PATH);
     engine_state.add_env_var(
-        "NU_LIB_DIRS".to_string(),
+        NUR_ENV_NU_LIB_DIRS.to_string(),
         Value::test_string(nur_lib_dir_path.to_string_lossy()),
     );
     #[cfg(feature = "debug")]
@@ -77,19 +79,16 @@ fn main() -> Result<ExitCode, miette::ErrReport> {
         eprintln!("nur scripts path: {:?}", nur_lib_dir_path);
     }
 
-    #[cfg(feature = "plugin")]
-    {
-        // Set default plugin path
-        let mut nur_plugin_dirs_path = nur_config_dir.clone();
-        nur_plugin_dirs_path.push(NUR_CONFIG_PLUGIN_PATH);
-        engine_state.add_env_var(
-            "NU_PLUGIN_DIRS".to_string(),
-            Value::test_string(nur_plugin_dirs_path.to_string_lossy()),
-        );
-        #[cfg(feature = "debug")]
-        if parsed_nur_args.debug_output {
-            eprintln!("nur plugins path: {:?}", nur_plugin_dirs_path);
-        }
+    // Set default plugin path
+    let mut nur_plugin_dirs_path = nur_config_dir.clone();
+    nur_plugin_dirs_path.push(NUR_CONFIG_PLUGIN_PATH);
+    engine_state.add_env_var(
+        NUR_ENV_NU_PLUGIN_DIRS.to_string(),
+        Value::test_string(nur_plugin_dirs_path.to_string_lossy()),
+    );
+    #[cfg(feature = "debug")]
+    if parsed_nur_args.debug_output {
+        eprintln!("nur plugins path: {:?}", nur_plugin_dirs_path);
     }
 
     // Set config and env paths to .nur versions
@@ -99,13 +98,9 @@ fn main() -> Result<ExitCode, miette::ErrReport> {
     let mut nur_config_path = nur_config_dir.clone();
     nur_config_path.push(NUR_CONFIG_CONFIG_FILENAME);
     engine_state.set_config_path("config-path", nur_config_path.clone());
-    #[cfg(feature = "plugin")]
-    let nur_plugin_path = {
-        let mut nur_plugin_path = nur_config_dir.clone();
-        nur_plugin_path.push(NUR_CONFIG_PLUGIN_FILENAME);
-        engine_state.set_config_path("plugin-path", nur_plugin_path.clone());
-        nur_plugin_path
-    };
+    let mut nur_plugin_path = nur_config_dir.clone();
+    nur_plugin_path.push(NUR_CONFIG_PLUGIN_FILENAME);
+    engine_state.set_config_path("plugin-path", nur_plugin_path.clone());
 
     // Set up the $nu constant before evaluating any files (need to have $nu available in them)
     let nu_const = create_nu_constant(
@@ -138,22 +133,36 @@ fn main() -> Result<ExitCode, miette::ErrReport> {
             Span::unknown(),
         ),
     );
+    nur_record.push(
+        NUR_VAR_DEFAULT_LIB_DIR,
+        Value::string(
+            String::from(nur_lib_dir_path.to_str().unwrap()),
+            Span::unknown(),
+        ),
+    );
+    nur_record.push(
+        NUR_VAR_DEFAULT_PLUGIN_DIR,
+        Value::string(
+            String::from(nur_plugin_dirs_path.to_str().unwrap()),
+            Span::unknown(),
+        ),
+    );
     let mut working_set = StateWorkingSet::new(&engine_state);
     let nur_var_id = working_set.add_variable(
         NUR_NAME.as_bytes().into(),
         Span::unknown(),
-        Type::Record(vec![]),
+        Type::Any,
         false,
     );
+    stack.add_var(nur_var_id, Value::record(nur_record, Span::unknown()));
     engine_state.merge_delta(working_set.render())?;
-    engine_state.set_variable_const_val(nur_var_id, Value::record(nur_record, Span::unknown()));
 
     // Further engine setup
     gather_parent_env_vars(&mut engine_state, project_path);
     load_standard_library(&mut engine_state)?;
 
     // Switch to using context
-    let mut context = Context::from(engine_state);
+    let mut context = Context::new(engine_state, stack);
 
     // Load end and context
     #[cfg(feature = "plugin")]
@@ -162,6 +171,7 @@ fn main() -> Result<ExitCode, miette::ErrReport> {
         context.source_and_merge_env(&nur_env_path, PipelineData::empty())?;
     } else {
         context.eval_and_merge_env(get_default_env(), PipelineData::empty())?;
+        context.eval_and_merge_env(get_default_nur_env(), PipelineData::empty())?;
     }
     if nur_config_path.exists() {
         context.source_and_merge_env(&nur_config_path, PipelineData::empty())?;
@@ -250,7 +260,7 @@ fn main() -> Result<ExitCode, miette::ErrReport> {
         eprintln!("full task call: {}", full_task_call);
     }
     if parsed_nur_args.quiet_execution {
-        exit_code = context.eval(full_task_call, input)?;
+        exit_code = context.eval_and_print(full_task_call, input)?;
 
         #[cfg(feature = "debug")]
         if parsed_nur_args.debug_output {

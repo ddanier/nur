@@ -3,12 +3,12 @@ use crate::errors::{NurError, NurResult};
 use nu_cli::read_plugin_file;
 use nu_engine::get_full_help;
 use nu_protocol::engine::Command;
-use nu_protocol::report_error;
 use nu_protocol::{
     ast::Block,
     engine::{EngineState, Stack, StateWorkingSet},
     PipelineData, Value,
 };
+use nu_protocol::{report_error, report_error_new};
 #[cfg(feature = "plugin")]
 use nu_protocol::{Span, Spanned};
 use nu_utils::stdout_write_all_and_flush;
@@ -22,6 +22,13 @@ pub struct Context {
 }
 
 impl Context {
+    pub fn new(engine_state: EngineState, stack: Stack) -> Context {
+        Context {
+            engine_state,
+            stack,
+        }
+    }
+
     fn _parse_nu_script(&mut self, file_path: Option<&str>, contents: String) -> NurResult<Block> {
         let mut working_set = StateWorkingSet::new(&self.engine_state);
         let block = nu_parser::parse(&mut working_set, file_path, &contents.into_bytes(), false);
@@ -50,7 +57,10 @@ impl Context {
             false,
             false,
         )
-        .map_err(NurError::from)
+        .map_err(|err| {
+            report_error_new(&self.engine_state, &err);
+            std::process::exit(1);
+        })
     }
 
     fn _eval<S: ToString>(
@@ -109,9 +119,9 @@ impl Context {
         }
     }
 
-    pub fn eval<S: ToString>(&mut self, contents: S, input: PipelineData) -> NurResult<i64> {
-        self._eval(None, contents, input, false, false)
-    }
+    // pub fn eval<S: ToString>(&mut self, contents: S, input: PipelineData) -> NurResult<i64> {
+    //     self._eval(None, contents, input, false, false)
+    // }
 
     pub fn eval_and_print<S: ToString>(
         &mut self,

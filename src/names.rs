@@ -3,18 +3,22 @@ pub(crate) const NUR_NAME: &str = "nur";
 // Config paths/files
 pub(crate) const NUR_CONFIG_PATH: &str = ".nur";
 pub(crate) const NUR_CONFIG_LIB_PATH: &str = "scripts";
-#[cfg(feature = "plugin")]
 pub(crate) const NUR_CONFIG_PLUGIN_PATH: &str = "plugins";
 pub(crate) const NUR_CONFIG_CONFIG_FILENAME: &str = "config.nu";
 pub(crate) const NUR_CONFIG_ENV_FILENAME: &str = "env.nu";
-#[cfg(feature = "plugin")]
 pub(crate) const NUR_CONFIG_PLUGIN_FILENAME: &str = "plugin.nu";
+
+// $env variable names
+pub(crate) const NUR_ENV_NU_LIB_DIRS: &str = "NU_LIB_DIRS";
+pub(crate) const NUR_ENV_NU_PLUGIN_DIRS: &str = "NU_PLUGIN_DIRS";
 
 // $nur variable names
 pub(crate) const NUR_VAR_RUN_PATH: &str = "run-path";
 pub(crate) const NUR_VAR_PROJECT_PATH: &str = "project-path";
 pub(crate) const NUR_VAR_TASK_NAME: &str = "task-name";
-pub(crate) const NUR_VAR_CONFIG_DIR: &str = "config-path";
+pub(crate) const NUR_VAR_CONFIG_DIR: &str = "config-dir";
+pub(crate) const NUR_VAR_DEFAULT_LIB_DIR: &str = "default-lib-dir";
+pub(crate) const NUR_VAR_DEFAULT_PLUGIN_DIR: &str = "default-plugin-dir";
 
 // nurfile names
 pub(crate) const NUR_FILE: &str = "nurfile";
