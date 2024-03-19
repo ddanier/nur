@@ -23,14 +23,12 @@ use crate::path::find_project_path;
 use engine::NurEngine;
 use miette::Result;
 use nu_ansi_term::Color;
-use nu_cli::gather_parent_env_vars;
 use nu_cmd_base::util::get_init_cwd;
 use nu_protocol::engine::{Stack, StateWorkingSet};
 use nu_protocol::{
     eval_const::create_nu_constant, BufferedReader, PipelineData, RawStream, Record, Span, Type,
     Value, NU_VARIABLE_ID,
 };
-use nu_std::load_standard_library;
 use std::env;
 use std::io::BufReader;
 use std::process::ExitCode;
@@ -173,10 +171,6 @@ fn main() -> Result<ExitCode, miette::ErrReport> {
     );
     stack.add_var(nur_var_id, Value::record(nur_record, Span::unknown()));
     engine_state.merge_delta(working_set.render())?;
-
-    // Further engine setup
-    gather_parent_env_vars(&mut engine_state, project_path);
-    load_standard_library(&mut engine_state)?;
 
     // Switch to using context
     let mut nur_engine = NurEngine::new(engine_state, stack);
