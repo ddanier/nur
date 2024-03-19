@@ -6,7 +6,7 @@ use nu_protocol::{
 };
 
 #[derive(Clone)]
-pub struct Nur;
+pub(crate) struct Nur;
 
 impl Command for Nur {
     fn name(&self) -> &str {

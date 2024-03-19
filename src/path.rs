@@ -2,7 +2,7 @@ use crate::errors::{NurError, NurResult};
 use crate::names::NUR_FILE;
 use std::path::Path;
 
-pub fn find_project_path(cwd: &Path) -> NurResult<&Path> {
+pub(crate) fn find_project_path(cwd: &Path) -> NurResult<&Path> {
     let mut path = cwd;
 
     loop {

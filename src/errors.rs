@@ -2,7 +2,7 @@ use miette::Diagnostic;
 use nu_protocol::{ParseError, ShellError};
 use thiserror::Error;
 
-pub type NurResult<T> = Result<T, NurError>;
+pub(crate) type NurResult<T> = Result<T, NurError>;
 
 #[derive(Clone, Debug, Error, Diagnostic)]
 pub enum NurError {

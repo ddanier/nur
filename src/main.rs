@@ -1,6 +1,5 @@
 mod args;
 mod commands;
-mod context;
 mod defaults;
 mod engine;
 mod errors;
@@ -10,7 +9,6 @@ mod path;
 
 use crate::args::{gather_commandline_args, parse_commandline_args};
 use crate::commands::Nur;
-use crate::context::Context;
 use crate::defaults::{get_default_config, get_default_env, get_default_nur_env};
 use crate::engine::init_engine_state;
 use crate::errors::NurError;
@@ -22,6 +20,7 @@ use crate::names::{
     NUR_VAR_TASK_NAME,
 };
 use crate::path::find_project_path;
+use engine::NurEngine;
 use miette::Result;
 use nu_ansi_term::Color;
 use nu_cli::gather_parent_env_vars;
@@ -38,8 +37,8 @@ use std::process::ExitCode;
 
 fn main() -> Result<ExitCode, miette::ErrReport> {
     // Get initial directory details
-    let init_cwd = get_init_cwd();
-    let project_path = find_project_path(&init_cwd)?;
+    let run_path = get_init_cwd();
+    let project_path = find_project_path(&run_path)?;
 
     // Initialize nu engine state
     let mut engine_state = init_engine_state(project_path)?;
@@ -56,8 +55,8 @@ fn main() -> Result<ExitCode, miette::ErrReport> {
         eprintln!("nur args: {:?}", parsed_nur_args);
         eprintln!("task name: {:?}", task_name);
         eprintln!("task args: {:?}", args_to_task);
-        eprintln!("init_cwd: {:?}", init_cwd);
-        eprintln!("project_path: {:?}", project_path);
+        eprintln!("run path: {:?}", run_path);
+        eprintln!("project path: {:?}", project_path);
     }
 
     // Base path for nur config/env
@@ -131,7 +130,7 @@ fn main() -> Result<ExitCode, miette::ErrReport> {
     let mut nur_record = Record::new();
     nur_record.push(
         NUR_VAR_RUN_PATH,
-        Value::string(String::from(init_cwd.to_str().unwrap()), Span::unknown()),
+        Value::string(String::from(run_path.to_str().unwrap()), Span::unknown()),
     );
     nur_record.push(
         NUR_VAR_PROJECT_PATH,
@@ -180,21 +179,21 @@ fn main() -> Result<ExitCode, miette::ErrReport> {
     load_standard_library(&mut engine_state)?;
 
     // Switch to using context
-    let mut context = Context::new(engine_state, stack);
+    let mut nur_engine = NurEngine::new(engine_state, stack);
 
     // Load end and context
     #[cfg(feature = "plugin")]
-    context.read_plugin_file(&nur_plugin_path);
+    nur_engine.read_plugin_file(&nur_plugin_path);
     if nur_env_path.exists() {
-        context.source_and_merge_env(&nur_env_path, PipelineData::empty())?;
+        nur_engine.source_and_merge_env(&nur_env_path, PipelineData::empty())?;
     } else {
-        context.eval_and_merge_env(get_default_env(), PipelineData::empty())?;
-        context.eval_and_merge_env(get_default_nur_env(), PipelineData::empty())?;
+        nur_engine.eval_and_merge_env(get_default_env(), PipelineData::empty())?;
+        nur_engine.eval_and_merge_env(get_default_nur_env(), PipelineData::empty())?;
     }
     if nur_config_path.exists() {
-        context.source_and_merge_env(&nur_config_path, PipelineData::empty())?;
+        nur_engine.source_and_merge_env(&nur_config_path, PipelineData::empty())?;
     } else {
-        context.eval_and_merge_env(get_default_config(), PipelineData::empty())?;
+        nur_engine.eval_and_merge_env(get_default_config(), PipelineData::empty())?;
     }
 
     // Load task files
@@ -206,16 +205,16 @@ fn main() -> Result<ExitCode, miette::ErrReport> {
         eprintln!("nurfile local path: {:?}", local_nurfile_path);
     }
     if nurfile_path.exists() {
-        context.source(nurfile_path, PipelineData::empty())?;
+        nur_engine.source(nurfile_path, PipelineData::empty())?;
     }
     if local_nurfile_path.exists() {
-        context.source(local_nurfile_path, PipelineData::empty())?;
+        nur_engine.source(local_nurfile_path, PipelineData::empty())?;
     }
 
     // Handle list tasks
     if parsed_nur_args.list_tasks {
         // TODO: Parse and handle commands without eval
-        context.eval_and_print(
+        nur_engine.eval_and_print(
             r#"scope commands | where name starts-with "nur " and category == "default" | get name | each { |it| $it | str substring 4.. } | sort"#,
             PipelineData::empty(),
         )?;
@@ -233,9 +232,9 @@ fn main() -> Result<ExitCode, miette::ErrReport> {
     // Handle help
     if parsed_nur_args.show_help || task_name.is_empty() {
         if task_name.is_empty() {
-            context.print_help(&Nur);
-        } else if let Some(command) = context.get_def(task_def_name) {
-            context.clone().print_help(command);
+            nur_engine.print_help(&Nur);
+        } else if let Some(command) = nur_engine.get_def(task_def_name) {
+            nur_engine.clone().print_help(command);
         } else {
             return Err(miette::ErrReport::from(NurError::TaskNotFound(task_name)));
         }
@@ -244,7 +243,7 @@ fn main() -> Result<ExitCode, miette::ErrReport> {
     }
 
     // Check if requested task exists
-    if !context.has_def(&task_def_name) {
+    if !nur_engine.has_def(&task_def_name) {
         return Err(miette::ErrReport::from(NurError::TaskNotFound(task_name)));
     }
 
@@ -278,7 +277,7 @@ fn main() -> Result<ExitCode, miette::ErrReport> {
         eprintln!("full task call: {}", full_task_call);
     }
     if parsed_nur_args.quiet_execution {
-        exit_code = context.eval_and_print(full_task_call, input)?;
+        exit_code = nur_engine.eval_and_print(full_task_call, input)?;
 
         #[cfg(feature = "debug")]
         if parsed_nur_args.debug_output {
@@ -289,7 +288,7 @@ fn main() -> Result<ExitCode, miette::ErrReport> {
         println!("Project path {:?}", project_path);
         println!("Executing task {}", task_name);
         println!();
-        exit_code = context.eval_and_print(full_task_call, input)?;
+        exit_code = nur_engine.eval_and_print(full_task_call, input)?;
         #[cfg(feature = "debug")]
         if parsed_nur_args.debug_output {
             println!("Exit code {:?}", exit_code);
