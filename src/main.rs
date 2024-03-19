@@ -1,5 +1,6 @@
 mod args;
 mod commands;
+mod compat;
 mod defaults;
 mod engine;
 mod errors;
@@ -9,6 +10,7 @@ mod path;
 
 use crate::args::{gather_commandline_args, parse_commandline_args};
 use crate::commands::Nur;
+use crate::compat::show_nurscripts_hint;
 use crate::defaults::{get_default_config, get_default_env, get_default_nur_env};
 use crate::engine::init_engine_state;
 use crate::errors::NurError;
@@ -57,29 +59,14 @@ fn main() -> Result<ExitCode, miette::ErrReport> {
         eprintln!("project path: {:?}", project_path);
     }
 
+    // Show hints for compatibility issues
+    show_nurscripts_hint(project_path, use_color);
+
     // Base path for nur config/env
     let nur_config_dir = project_path.join(NUR_CONFIG_PATH);
     #[cfg(feature = "debug")]
     if parsed_nur_args.debug_output {
         eprintln!("nur config path: {:?}", nur_config_dir);
-    }
-
-    // Give some hints if old ".nurscripts" exists
-    let old_nur_lib_path = project_path.join(".nurscripts");
-    if old_nur_lib_path.exists() && old_nur_lib_path.is_dir() {
-        eprintln!(
-            "{}WARNING: .nurscripts/ has moved to .nur/scripts/ -> please update your project{}",
-            if use_color {
-                Color::Red.prefix().to_string()
-            } else {
-                String::from("")
-            },
-            if use_color {
-                Color::Red.suffix().to_string()
-            } else {
-                String::from("")
-            },
-        );
     }
 
     // Set default scripts path
