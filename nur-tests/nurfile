@@ -31,7 +31,7 @@ def "nur exec-stdin" [] {
     lines | each { |it| print $"BEFORE ($it) AFTER" }
 }
 def "nur test-stdin" [] {
-    std assert ("inner" | ^$nurcmd --quiet --stdin exec-stdin | str contains "BEFORE inner AFTER")
+    std assert ("inner" | run-nur --stdin exec-stdin | str contains "BEFORE inner AFTER")
 }
 
 def "nur should-fail" [] {
@@ -39,7 +39,7 @@ def "nur should-fail" [] {
 }
 def "nur test-failed-execution" [] {
     try {
-        ^$nurcmd --quiet should-fail
+        run-nur should-fail
         error make {"msg": "Did not fail, this is an error"}
     } catch {
         # all ok
@@ -47,6 +47,12 @@ def "nur test-failed-execution" [] {
 }
 
 # Utils and other commands
+
+def --wrapped run-nur [
+    ...args
+] {
+    ^$nurcmd --quiet ...$args
+}
 
 def "nur prepare" [] {
     cargo build --release
@@ -58,7 +64,7 @@ def "nur run-all" [] {
     $tests | each {
         |it|
         $it | str join " " | print
-        ^$nurcmd --quiet $it.1
+        run-nur $it.1
     }
 
     null
