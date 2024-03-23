@@ -34,6 +34,18 @@ def "nur test-stdin" [] {
     std assert ("inner" | ^$nurcmd --quiet --stdin exec-stdin | str contains "BEFORE inner AFTER")
 }
 
+def "nur should-fail" [] {
+    ^false
+}
+def "nur test-failed-execution" [] {
+    try {
+        ^$nurcmd --quiet should-fail
+        error make {"msg": "Did not fail, this is an error"}
+    } catch {
+        # all ok
+    }
+}
+
 # Utils and other commands
 
 def "nur prepare" [] {
