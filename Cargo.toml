@@ -8,7 +8,7 @@ homepage = "https://github.com/ddanier/nur"
 repository = "https://github.com/ddanier/nur"
 readme = "README.md"
 authors = ["David Danier <david.danier@gmail.com>"]
-keywords = ["nu", "taskrunner"]
+keywords = ["nu", "taskrunner", "development", "command-line"]
 categories = ["command-line-utilities", "development-tools"]
 
 [dependencies]
