@@ -11,7 +11,7 @@ mod path;
 use crate::args::{gather_commandline_args, parse_commandline_args};
 use crate::commands::Nur;
 use crate::compat::show_nurscripts_hint;
-use crate::defaults::{get_default_config, get_default_env, get_default_nur_env};
+use crate::defaults::{get_default_nur_config, get_default_nur_env};
 use crate::engine::init_engine_state;
 use crate::errors::NurError;
 use crate::names::{
@@ -40,7 +40,7 @@ fn main() -> Result<ExitCode, miette::ErrReport> {
     let run_path = get_init_cwd();
     let project_path = find_project_path(&run_path)?;
 
-    // Initialize nu engine state
+    // Initialize nu engine state and stack
     let mut engine_state = init_engine_state(project_path)?;
     let mut stack = Stack::new();
     let use_color = engine_state.get_config().use_ansi_coloring;
@@ -111,7 +111,7 @@ fn main() -> Result<ExitCode, miette::ErrReport> {
     )?;
     engine_state.set_variable_const_val(NU_VARIABLE_ID, nu_const);
 
-    // Add $nur constant record (like $nu)
+    // Set up the $nur constant record (like $nu)
     let mut nur_record = Record::new();
     nur_record.push(
         NUR_VAR_RUN_PATH,
@@ -159,22 +159,21 @@ fn main() -> Result<ExitCode, miette::ErrReport> {
     stack.add_var(nur_var_id, Value::record(nur_record, Span::unknown()));
     engine_state.merge_delta(working_set.render())?;
 
-    // Switch to using context
+    // Switch to using nur engine using the already setup engine state and stack
     let mut nur_engine = NurEngine::new(engine_state, stack);
 
-    // Load end and context
+    // Load plugins, env and context
     #[cfg(feature = "plugin")]
     nur_engine.read_plugin_file(&nur_plugin_path);
     if nur_env_path.exists() {
         nur_engine.source_and_merge_env(&nur_env_path, PipelineData::empty())?;
     } else {
-        nur_engine.eval_and_merge_env(get_default_env(), PipelineData::empty())?;
         nur_engine.eval_and_merge_env(get_default_nur_env(), PipelineData::empty())?;
     }
     if nur_config_path.exists() {
         nur_engine.source_and_merge_env(&nur_config_path, PipelineData::empty())?;
     } else {
-        nur_engine.eval_and_merge_env(get_default_config(), PipelineData::empty())?;
+        nur_engine.eval_and_merge_env(get_default_nur_config(), PipelineData::empty())?;
     }
 
     // Load task files
