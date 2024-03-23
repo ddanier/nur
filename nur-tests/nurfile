@@ -1,0 +1,53 @@
+use std
+
+let nurcmd = "./../target/release/nur"
+
+# Tests
+
+def "nur test-env" [] {
+    std assert (($env.PWD | path join ".nur" "scripts") in $env.NU_LIB_DIRS)
+    std assert (($env.PWD | path join ".nur" "plugins") in $env.NU_PLUGIN_DIRS)
+}
+
+def "nur test-config" [] {
+    std assert ($env.config | is-not-empty)
+}
+
+def "nur test-nu" [] {
+    std assert ($nu.config-path == ($env.PWD | path join ".nur" "config.nu"))
+    std assert ($nu.env-path == ($env.PWD | path join ".nur" "env.nu"))
+    std assert ($nu.current-exe ends-with "/nur")
+}
+
+def "nur test-nur" [] {
+    std assert ($nur.task-name == "test-nur")
+    std assert ($nur.run-path == $env.PWD)
+    std assert ($nur.project-path == $env.PWD)
+    std assert ($nur.default-lib-dir == ($env.PWD | path join ".nur" "scripts"))
+    std assert ($nur.default-plugin-dir == ($env.PWD | path join ".nur" "plugins"))
+}
+
+def "nur exec-stdin" [] {
+    lines | each { |it| print $"BEFORE ($it) AFTER" }
+}
+def "nur test-stdin" [] {
+    std assert ("inner" | ^$nurcmd --quiet --stdin exec-stdin | str contains "BEFORE inner AFTER")
+}
+
+# Utils and other commands
+
+def "nur prepare" [] {
+    cargo build --release
+}
+
+def "nur run-all" [] {
+    let tests = (scope commands | filter { |it| $it.name starts-with "nur test-" } | each { |it| $it.name | split row " " })
+
+    $tests | each {
+        |it|
+        $it | str join " " | print
+        ^$nurcmd --quiet $it.1
+    }
+
+    null
+}

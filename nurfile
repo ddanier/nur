@@ -47,6 +47,14 @@ def "nur test" [
     }
 }
 
+# Run nur nuscript tests
+def "nur test-nur" [] {
+    cd nur-tests
+
+    cargo run -- --quiet prepare
+    cargo run -- --quiet run-all
+}
+
 # Run linter (clippy)
 def --wrapped "nur lint" [
     ...args
