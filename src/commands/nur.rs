@@ -17,7 +17,7 @@ impl Command for Nur {
         let mut signature = Signature::build("nur");
 
         signature = signature
-            .usage("nu run - simple task runner.")
+            .usage("nur - a taskrunner based on nu shell.")
             .allows_unknown_args()
             // .named(
             //     "config",
