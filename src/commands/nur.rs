@@ -29,10 +29,10 @@ impl Command for Nur {
             .switch("list", "list available tasks and then just exit", None)
             .switch(
                 "quiet",
-                "Do not output anything but what tasks produce",
+                "Do not output anything but what the task produces",
                 None,
             )
-            .switch("stdin", "Attach stdin to nu function call", None)
+            .switch("stdin", "Attach stdin to called nur task", None)
             .optional(
                 "task name",
                 SyntaxShape::Filepath,
