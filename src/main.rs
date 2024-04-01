@@ -38,7 +38,9 @@ use std::process::ExitCode;
 fn main() -> Result<ExitCode, miette::ErrReport> {
     // Get initial directory details
     let run_path = get_init_cwd();
-    let project_path = find_project_path(&run_path)?;
+    let found_project_path = find_project_path(&run_path);
+    let has_project_path = found_project_path.is_some();
+    let project_path = found_project_path.unwrap_or(&run_path);
 
     // Initialize nu engine state and stack
     let mut engine_state = init_engine_state(project_path)?;
@@ -60,7 +62,21 @@ fn main() -> Result<ExitCode, miette::ErrReport> {
     }
 
     // Show hints for compatibility issues
-    show_nurscripts_hint(project_path, use_color);
+    if has_project_path {
+        show_nurscripts_hint(project_path, use_color);
+    }
+
+    // Handle execution without project path, only allow to show help, abort otherwise
+    if !has_project_path {
+        if parsed_nur_args.show_help {
+            let mut nur_engine = NurEngine::new(engine_state, stack);
+            nur_engine.print_help(&Nur);
+
+            std::process::exit(0);
+        } else {
+            return Err(miette::ErrReport::from(NurError::NurfileNotFound()));
+        }
+    }
 
     // Base path for nur config/env
     let nur_config_dir = project_path.join(NUR_CONFIG_PATH);
