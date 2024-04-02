@@ -16,7 +16,7 @@ def "nur test-config" [] {
 def "nur test-nu" [] {
     std assert ($nu.config-path == ($env.PWD | path join ".nur" "config.nu"))
     std assert ($nu.env-path == ($env.PWD | path join ".nur" "env.nu"))
-    std assert ($nu.current-exe ends-with "/nur")
+    std assert (($nu.current-exe | path basename) == "nur")
 }
 
 def "nur test-nur" [] {
@@ -35,7 +35,11 @@ def "nur test-stdin" [] {
 }
 
 def "nur should-fail" [] {
-    ^false
+    if (sys).host.name == "Windows" {
+        cmd /c "exit 1"
+    } else {
+        ^false
+    }
 }
 def "nur test-failed-execution" [] {
     try {
