@@ -12,35 +12,26 @@ keywords = ["nu", "taskrunner", "development", "command-line"]
 categories = ["command-line-utilities", "development-tools"]
 
 [dependencies]
-miette = { version = "7.1", features = ["fancy-no-backtrace", "fancy"] }
+nu-cli = "0.92.0"
+nu-cmd-base = "0.92.0"
+nu-cmd-dataframe = { version = "0.92.0", optional = true }
+nu-cmd-extra = "0.92.0"
+nu-plugin = { version = "0.92.0", optional = true }
+nu-cmd-lang = "0.92.0"
+nu-command = "0.92.0"
+nu-engine = "0.92.0"
+nu-explore = "0.92.0"
+nu-parser = "0.92.0"
+nu-protocol = "0.92.0"
+nu-std = "0.92.0"
+nu-utils = "0.92.0"
+thiserror = "1.0.58"
+miette = { version = "7.2", features = ["fancy-no-backtrace"] }
 nu-ansi-term = "0.50.0"
-nu-cli = "0.91.0"
-nu-cmd-base = "0.91.0"
-nu-cmd-dataframe = { version = "0.91.0", optional = true }
-nu-cmd-extra = { version = "0.91.0", optional = true }
-nu-plugin = { version = "0.91.0", optional = true }
-nu-cmd-lang = "0.91.0"
-nu-command = "0.91.0"
-nu-engine = "0.91.0"
-nu-explore = "0.91.0"
-nu-parser = "0.91.0"
-nu-protocol = "0.91.0"
-nu-std = "0.91.0"
-nu-utils = "0.91.0"
-thiserror = "1.0.57"
 
 [features]
-default = ["extra"]
-extra = ["dep:nu-cmd-extra", "nu-cmd-lang/extra"]
+default = []
 dataframe = ["dep:nu-cmd-dataframe", "nu-cmd-dataframe/dataframe"]
-plugin = [
-    "dep:nu-plugin",
-    "nu-cli/plugin",
-    "nu-parser/plugin",
-    "nu-command/plugin",
-    "nu-protocol/plugin",
-    "nu-engine/plugin",
-]
 debug = []
 
 [dev-dependencies]

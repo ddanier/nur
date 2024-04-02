@@ -16,10 +16,8 @@ use crate::engine::init_engine_state;
 use crate::errors::NurError;
 use crate::names::{
     NUR_CONFIG_CONFIG_FILENAME, NUR_CONFIG_ENV_FILENAME, NUR_CONFIG_LIB_PATH, NUR_CONFIG_PATH,
-    NUR_CONFIG_PLUGIN_FILENAME, NUR_CONFIG_PLUGIN_PATH, NUR_ENV_NU_LIB_DIRS,
-    NUR_ENV_NU_PLUGIN_DIRS, NUR_FILE, NUR_LOCAL_FILE, NUR_NAME, NUR_VAR_CONFIG_DIR,
-    NUR_VAR_DEFAULT_LIB_DIR, NUR_VAR_DEFAULT_PLUGIN_DIR, NUR_VAR_PROJECT_PATH, NUR_VAR_RUN_PATH,
-    NUR_VAR_TASK_NAME,
+    NUR_ENV_NU_LIB_DIRS, NUR_FILE, NUR_LOCAL_FILE, NUR_NAME, NUR_VAR_CONFIG_DIR,
+    NUR_VAR_DEFAULT_LIB_DIR, NUR_VAR_PROJECT_PATH, NUR_VAR_RUN_PATH, NUR_VAR_TASK_NAME,
 };
 use crate::path::find_project_path;
 use engine::NurEngine;
@@ -97,18 +95,6 @@ fn main() -> Result<ExitCode, miette::ErrReport> {
         eprintln!("nur scripts path: {:?}", nur_lib_dir_path);
     }
 
-    // Set default plugin path
-    let mut nur_plugin_dirs_path = nur_config_dir.clone();
-    nur_plugin_dirs_path.push(NUR_CONFIG_PLUGIN_PATH);
-    engine_state.add_env_var(
-        NUR_ENV_NU_PLUGIN_DIRS.to_string(),
-        Value::test_string(nur_plugin_dirs_path.to_string_lossy()),
-    );
-    #[cfg(feature = "debug")]
-    if parsed_nur_args.debug_output {
-        eprintln!("nur plugins path: {:?}", nur_plugin_dirs_path);
-    }
-
     // Set config and env paths to .nur versions
     let mut nur_env_path = nur_config_dir.clone();
     nur_env_path.push(NUR_CONFIG_ENV_FILENAME);
@@ -116,9 +102,6 @@ fn main() -> Result<ExitCode, miette::ErrReport> {
     let mut nur_config_path = nur_config_dir.clone();
     nur_config_path.push(NUR_CONFIG_CONFIG_FILENAME);
     engine_state.set_config_path("config-path", nur_config_path.clone());
-    let mut nur_plugin_path = nur_config_dir.clone();
-    nur_plugin_path.push(NUR_CONFIG_PLUGIN_FILENAME);
-    engine_state.set_config_path("plugin-path", nur_plugin_path.clone());
 
     // Set up the $nu constant before evaluating any files (need to have $nu available in them)
     let nu_const = create_nu_constant(
@@ -158,13 +141,6 @@ fn main() -> Result<ExitCode, miette::ErrReport> {
             Span::unknown(),
         ),
     );
-    nur_record.push(
-        NUR_VAR_DEFAULT_PLUGIN_DIR,
-        Value::string(
-            String::from(nur_plugin_dirs_path.to_str().unwrap()),
-            Span::unknown(),
-        ),
-    );
     let mut working_set = StateWorkingSet::new(&engine_state);
     let nur_var_id = working_set.add_variable(
         NUR_NAME.as_bytes().into(),
@@ -178,9 +154,7 @@ fn main() -> Result<ExitCode, miette::ErrReport> {
     // Switch to using nur engine using the already setup engine state and stack
     let mut nur_engine = NurEngine::new(engine_state, stack);
 
-    // Load plugins, env and context
-    #[cfg(feature = "plugin")]
-    nur_engine.read_plugin_file(&nur_plugin_path);
+    // Load env and config
     if nur_env_path.exists() {
         nur_engine.source_and_merge_env(&nur_env_path, PipelineData::empty())?;
     } else {

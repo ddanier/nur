@@ -1,23 +1,19 @@
 use crate::errors::{NurError, NurResult};
 use crate::nu_version::NU_VERSION;
 use nu_cli::gather_parent_env_vars;
-#[cfg(feature = "plugin")]
-use nu_cli::read_plugin_file;
 use nu_engine::get_full_help;
 use nu_protocol::ast::Block;
 use nu_protocol::engine::{Command, Stack, StateWorkingSet};
-#[cfg(feature = "plugin")]
-use nu_protocol::Spanned;
 use nu_protocol::{engine::EngineState, report_error, report_error_new, PipelineData, Span, Value};
 use nu_std::load_standard_library;
 use nu_utils::stdout_write_all_and_flush;
 use std::fs;
 use std::path::Path;
+use std::sync::Arc;
 
 pub(crate) fn init_engine_state(project_path: &Path) -> NurResult<EngineState> {
     let engine_state = nu_cmd_lang::create_default_context();
     let engine_state = nu_command::add_shell_command_context(engine_state);
-    #[cfg(feature = "extra")]
     let engine_state = nu_cmd_extra::add_extra_command_context(engine_state);
     #[cfg(feature = "dataframe")]
     let engine_state = nu_cmd_dataframe::add_dataframe_context(engine_state);
@@ -29,7 +25,7 @@ pub(crate) fn init_engine_state(project_path: &Path) -> NurResult<EngineState> {
 
     // Custom additions only used in cli
     let delta = {
-        let mut working_set = nu_protocol::engine::StateWorkingSet::new(&engine_state);
+        let mut working_set = StateWorkingSet::new(&engine_state);
         working_set.add_decl(Box::new(nu_cli::NuHighlight));
         working_set.add_decl(Box::new(nu_cli::Print));
         working_set.render()
@@ -78,7 +74,15 @@ impl NurEngine {
         }
     }
 
-    fn _parse_nu_script(&mut self, file_path: Option<&str>, contents: String) -> NurResult<Block> {
+    fn _parse_nu_script(
+        &mut self,
+        file_path: Option<&str>,
+        contents: String,
+    ) -> NurResult<Arc<Block>> {
+        if file_path.is_some() {
+            self.engine_state.start_in_file(file_path);
+        }
+
         let mut working_set = StateWorkingSet::new(&self.engine_state);
         let block = nu_parser::parse(&mut working_set, file_path, &contents.into_bytes(), false);
 
@@ -98,13 +102,11 @@ impl NurEngine {
     }
 
     fn _execute_block(&mut self, block: &Block, input: PipelineData) -> NurResult<PipelineData> {
-        nu_engine::eval_block(
+        nu_engine::get_eval_block(&self.engine_state)(
             &self.engine_state,
             &mut self.stack,
             block,
             input,
-            false,
-            false,
         )
         .map_err(|err| {
             report_error_new(&self.engine_state, &err);
@@ -208,21 +210,6 @@ impl NurEngine {
         self._eval(file_path.as_ref().to_str(), contents, input, false, true)
     }
 
-    #[cfg(feature = "plugin")]
-    pub(crate) fn read_plugin_file<P: AsRef<Path>>(&mut self, nur_plugin_path: P) {
-        if nur_plugin_path.as_ref().exists() {
-            read_plugin_file(
-                &mut self.engine_state,
-                &mut self.stack,
-                Some(Spanned {
-                    item: String::from(nur_plugin_path.as_ref().to_str().unwrap()),
-                    span: Span::unknown(),
-                }),
-                "nushell", // will never be used, as we have set nur_plugin_path
-            );
-        }
-    }
-
     pub(crate) fn has_def<S: AsRef<str>>(&self, name: S) -> bool {
         self.engine_state
             .find_decl(name.as_ref().as_bytes(), &[])
@@ -231,7 +218,7 @@ impl NurEngine {
 
     pub(crate) fn get_def<S: AsRef<str>>(&self, name: S) -> Option<&dyn Command> {
         if let Some(decl_id) = self.engine_state.find_decl(name.as_ref().as_bytes(), &[]) {
-            Some(self.engine_state.get_decl(decl_id).as_ref())
+            Some(self.engine_state.get_decl(decl_id))
         } else {
             None
         }

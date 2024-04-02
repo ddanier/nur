@@ -5,10 +5,9 @@ use nu_parser::parse;
 use nu_parser::{escape_for_script_arg, escape_quote_string};
 use nu_protocol::report_error;
 use nu_protocol::{
-    ast::{Expr, Expression, PipelineElement},
+    ast::Expr,
     engine::{Command, EngineState, Stack, StateWorkingSet},
     ShellError,
-    // Spanned,
 };
 use nu_utils::stdout_write_all_and_flush;
 
@@ -69,14 +68,7 @@ pub(crate) fn parse_commandline_args(
 
     // We should have a successful parse now
     if let Some(pipeline) = block.pipelines.first() {
-        if let Some(PipelineElement::Expression(
-            _,
-            Expression {
-                expr: Expr::Call(call),
-                ..
-            },
-        )) = pipeline.elements.first()
-        {
+        if let Some(Expr::Call(call)) = pipeline.elements.first().map(|e| &e.expr.expr) {
             // let config_file = call.get_flag_expr("config");
             let list_tasks = call.has_flag(engine_state, &mut stack, "list")?;
             let quiet_execution = call.has_flag(engine_state, &mut stack, "quiet")?;
@@ -141,7 +133,7 @@ pub(crate) fn parse_commandline_args(
     std::process::exit(1);
 }
 
-#[derive(Debug)]
+#[derive(Debug, Clone)]
 pub(crate) struct NurCliArgs {
     // pub(crate) config_file: Option<Spanned<String>>,
     pub(crate) list_tasks: bool,
