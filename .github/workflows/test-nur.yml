@@ -18,5 +18,10 @@ jobs:
         with:
           toolchain: stable
 
+      - name: Build nur release version to be used for nur nuscript tests
+        run: cargo build --release
+
       - name: Run nur nuscript Tests
-        run: cargo run -- test-nur
+        run: |
+          cd nur-tests
+          ./../target/release/nur run-all
