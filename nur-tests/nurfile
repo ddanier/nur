@@ -55,7 +55,7 @@ def "nur test-failed-execution" [] {
 # Utils and other commands
 
 def is-windows [] {
-    (sys).host.name == "Windows"
+    $nu.os-info.name == "windows"
 }
 
 def --wrapped run-nur [
