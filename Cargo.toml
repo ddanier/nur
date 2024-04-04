@@ -12,19 +12,18 @@ keywords = ["nu", "taskrunner", "development", "command-line"]
 categories = ["command-line-utilities", "development-tools"]
 
 [dependencies]
-nu-cli = "0.92.0"
-nu-cmd-base = "0.92.0"
-nu-cmd-dataframe = { version = "0.92.0", optional = true }
-nu-cmd-extra = "0.92.0"
-nu-plugin = { version = "0.92.0", optional = true }
-nu-cmd-lang = "0.92.0"
-nu-command = "0.92.0"
-nu-engine = "0.92.0"
-nu-explore = "0.92.0"
-nu-parser = "0.92.0"
-nu-protocol = "0.92.0"
-nu-std = "0.92.0"
-nu-utils = "0.92.0"
+nu-cli = "0.92.1"
+nu-cmd-base = "0.92.1"
+nu-cmd-dataframe = { version = "0.92.1", optional = true }
+nu-cmd-extra = "0.92.1"
+nu-cmd-lang = "0.92.1"
+nu-command = "0.92.1"
+nu-engine = "0.92.1"
+nu-explore = "0.92.1"
+nu-parser = "0.92.1"
+nu-protocol = "0.92.1"
+nu-std = "0.92.1"
+nu-utils = "0.92.1"
 thiserror = "1.0.58"
 miette = { version = "7.2", features = ["fancy-no-backtrace"] }
 nu-ansi-term = "0.50.0"
