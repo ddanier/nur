@@ -50,13 +50,13 @@ mkdir $dest
 
 print $'Creating release archive...'
 mkdir $dist
-mut archive = $'($dist)/($dest).zip'
+mut archive = $'($dist)/($dest).tar.gz'
 match $os {
     "windows-latest" => {
+        $archive = $'($dist)/($dest).zip'
         7z a $archive $dest
     }
     _ => {
-        $archive = $'($dist)/($dest).tar.gz'
         tar -czf $archive $dest
     }
 }
