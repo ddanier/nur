@@ -16,11 +16,7 @@ print $'Preparing build dependencies...'
 match [$os, $target] {
     ["ubuntu-latest", "aarch64-unknown-linux-gnu"] => {
         sudo apt update
-        sudo apt install -y gcc-aarch64-linux-gnu libssl-dev pkg-config
-    }
-    ["ubuntu-latest", _] => {
-        sudo apt update
-        sudo apt install -y libssl-dev pkg-config
+        sudo apt install -y gcc-aarch64-linux-gnu
     }
 }
 
