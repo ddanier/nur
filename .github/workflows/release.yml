@@ -11,6 +11,7 @@ on:
 jobs:
   release:
     strategy:
+      fail-fast: true
       matrix:
         target:
           - aarch64-apple-darwin
