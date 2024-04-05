@@ -6,7 +6,7 @@ let src = $env.GITHUB_WORKSPACE
 let version = (open Cargo.toml | get package.version)
 let suffix = if $os == 'windows-latest' { '.exe' }
 let nur_bin = $'target/($target)/release/($bin)($suffix)'
-let executables: glob = $'target/($target)/release/($bin)*($suffix)'
+let executables = $'target/($target)/release/($bin)*($suffix)'
 let dist = $'($env.GITHUB_WORKSPACE)/output'
 let dest = $'($bin)-($version)-($target)'
 
@@ -49,10 +49,9 @@ mkdir $dest
 [README.md LICENSE ...(glob $executables)] | each {|it| cp -rv $it $dest } | flatten
 
 print $'Creating release archive...'
-mut archive
+mut archive = $'($dist)/($dest).zip'
 match $os {
     "windows-latest" => {
-        $archive = $'($dist)/($dest).zip'
         7z a $archive $dest
     }
     _ => {
