@@ -44,11 +44,12 @@ if ($ver | str trim | is-empty) {
 print $'Cleanup release...'
 rm -rf ...(glob $'target/($target)/release/*.d')
 
-print $'Copying ($bin) and other release files to ($dist)...'
+print $'Copying ($bin) and other release files to ($dest)...'
 mkdir $dest
 [README.md LICENSE ...(glob $executables)] | each {|it| cp -rv $it $dest } | flatten
 
 print $'Creating release archive...'
+mkdir $dist
 mut archive = $'($dist)/($dest).zip'
 match $os {
     "windows-latest" => {
