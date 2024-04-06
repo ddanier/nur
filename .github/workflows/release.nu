@@ -33,13 +33,13 @@ match $format {
 }
 
 
-print $'Check ($bin) version...'
-let ver = do { ^$nur_bin --version } | str join
-if ($ver | str trim | is-empty) {
-    print $'(ansi r)Incompatible arch: cannot run ($bin)(ansi reset)'
-} else {
-    print $ver
-}
+# print $'Check ($bin) version...'
+# let ver = do { ^$nur_bin --version } | str join
+# if ($ver | str trim | is-empty) {
+#     print $'(ansi r)Incompatible arch: cannot run ($bin)(ansi reset)'
+# } else {
+#     print $ver
+# }
 
 print $'Cleanup release...'
 rm -rf ...(glob $'target/($target)/release/*.d')
