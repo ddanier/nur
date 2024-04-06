@@ -58,10 +58,9 @@ jobs:
         with:
           version: "*"
 
-      - name: Build nur binary
-        id: release
+      - name: Build nur archive
+        id: build
         run: nu .github/workflows/release.nu
-
         env:
           OS: ${{ matrix.os }}
           REF: ${{ github.ref }}
@@ -69,12 +68,12 @@ jobs:
           FORMAT: ${{ matrix.format }}
 
       - name: Publish archives into draft release
-        uses: softprops/action-gh-release@v2
+        uses: softprops/action-gh-release@v2.0.4
         # if: ${{ startsWith(github.ref, 'refs/tags/') }}
         with:
           draft: true
           # name: "Release ${{ github.ref_name }}"
           # generate_release_notes: true
-          files: ${{ steps.release.outputs.archive }}
+          files: ${{ steps.build.outputs.archive }}
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
