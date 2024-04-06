@@ -4,24 +4,21 @@ let target = $env.TARGET
 let format = $env.FORMAT
 let src = $env.GITHUB_WORKSPACE
 let version = (open Cargo.toml | get package.version)
-let suffix = match [$os.name, $format] {
-    ["windows", "msi"] => ".msi"
-    ["windows", "bin"] => ".exe"
+let suffix = match $os.name {
+    "windows" => ".exe"
     _ => ""
 }
-let release_bin = match [$os.name, $format] {
-    ["windows", "msi"] => $'target/release/($bin)($suffix)'
-    _ => $'target/($target)/release/($bin)($suffix)'
+let target_path = match [$os.name, $format] {
+    ["windows", "msi"] => $'target/release/'
+    _ => $'target/($target)/release/'
 }
-let executables = match [$os.name, $format] {
-    ["windows", "msi"] => $'target/wix/($bin)*($suffix)'
-    _ => $'target/($target)/release/($bin)*($suffix)'
-}
+let release_bin = match $'($target_path)/($bin)($suffix)'
+let executables = $'($target_path)/($bin)*($suffix)'
 let dist = $'($env.GITHUB_WORKSPACE)/output'
 let dest = $'($bin)-($version)-($target)'
 
 print $'Config for this run is:'
-print {
+{
     bin: $bin
     os: $os
     target: $target
@@ -29,11 +26,12 @@ print {
     src: $src
     version: $version
     suffix: $suffix
+    target_path: $target_path
     release_bin: $release_bin
     executables: $executables
     dist: $dist
     dest: $dest
-}
+} | table -e
 
 print $'Packaging ($bin) v($version) for ($target) in ($src)...'
 
@@ -51,7 +49,6 @@ match [$os.name, $format] {
     ["windows", "msi"] => {
         cargo install cargo-wix
         cargo build --release --all  # wix needs target/release
-        cargo wix --no-build --nocapture --package $bin --output $"target/wix/($dest).msi"
     }
     ["windows", "bin"] => {
         cargo build --release --all --target $target
@@ -69,20 +66,27 @@ if ($built_version | str trim | is-empty) {
     print $" -> built version is: ($built_version)"
 }
 
-print $'Cleanup release...'
-rm -rf ...(glob $'target/($target)/release/*.d')
+print $'Cleanup release target path...'
+rm -rf ...(glob $'($target_path)/*.d')
 
 print $'Copying ($bin) and other release files to ($dest)...'
-mkdir $dest
-[README.md LICENSE ...(glob $executables)] | each {|it| cp -rv $it $dest } | flatten
+match [$os.name, $format] {
+    ["windows", "msi"] => {
+        print ' -> skipping for MSI build'
+    }
+    _ => {
+        mkdir $dest
+        [README.md LICENSE ...(glob $executables)] | each {|it| cp -rv $it $dest } | flatten
+    }
+}
 
 print $'Creating release archive in ($dist)...'
 mkdir $dist
 mut archive = $'($dist)/($dest).tar.gz'
 match [$os.name, $format] {
     ["windows", "msi"] => {
-        cp $'($dest)/($dest).msi' $'($dist)/'
         $archive = $'($dist)/($dest).msi'
+        cargo wix --no-build --nocapture --package $bin --output $archive
     }
     ["windows", "bin"] => {
         $archive = $'($dist)/($dest).zip'
@@ -92,8 +96,7 @@ match [$os.name, $format] {
         tar -czf $archive $dest
     }
 }
+print $' -> archive: ($archive)'
 
 print $'Provide archive to GitHub...'
-print $' -> archive: ($archive)'
-ls $archive
 echo $"archive=($archive)" | save --append $env.GITHUB_OUTPUT
