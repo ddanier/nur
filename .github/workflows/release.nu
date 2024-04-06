@@ -8,14 +8,11 @@ let suffix = match $os.name {
     "windows" => ".exe"
     _ => ""
 }
-let target_path = match [$os.name, $format] {
-    ["windows", "msi"] => $'target/release/'
-    _ => $'target/($target)/release/'
-}
+let target_path = $'target/($target)/release'
 let release_bin = $'($target_path)/($bin)($suffix)'
 let executables = $'($target_path)/($bin)*($suffix)'
-let dist = $'($env.GITHUB_WORKSPACE)/output'
 let dest = $'($bin)-($version)-($target)'
+let dist = $'($env.GITHUB_WORKSPACE)/output'
 
 print $'Config for this run is:'
 {
@@ -29,8 +26,8 @@ print $'Config for this run is:'
     target_path: $target_path
     release_bin: $release_bin
     executables: $executables
-    dist: $dist
     dest: $dest
+    dist: $dist
 } | table -e | print
 
 print $'Packaging ($bin) v($version) for ($target) in ($src)...'
@@ -67,14 +64,7 @@ if ($built_version | str trim | is-empty) {
 }
 
 print $'Cleanup release target path...'
-match [$os.name, $format] {
-    ["windows", "msi"] => {
-        print ' -> skipping for MSI build'
-    }
-    _ => {
-        rm -rf ...(glob $'($target_path)/*.d')
-    }
-}
+rm -rf ...(glob $'($target_path)/*.d')
 
 print $'Copying ($bin) and other release files to ($dest)...'
 match [$os.name, $format] {
