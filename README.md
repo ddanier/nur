@@ -71,8 +71,9 @@ include the whole `nu` runtime engine and will run as a standalone command.
 
 ### Alternative installation methods
 
-* For **MacOS** you can use my unofficial [Homebrew](https://brew.sh/) tap to. All necessary steps
-  are documented in the repository: https://github.com/ddanier/nur-homebrew
+* For **MacOS** you can use my unofficial [Homebrew](https://brew.sh/) tap to install `nur`. All necessary
+  steps are documented in the repository: https://github.com/ddanier/nur-homebrew  
+  (This will allow you to just use `brew install nur`)
 * For **Windows** you can just use the provided binaries available in each release version. Note the
   `.msi` package might be the easiest to use: https://github.com/ddanier/nur/releases
 
