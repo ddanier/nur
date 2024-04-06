@@ -31,7 +31,7 @@ print $'Config for this run is:'
     executables: $executables
     dist: $dist
     dest: $dest
-} | table -e
+} | table -e | print
 
 print $'Packaging ($bin) v($version) for ($target) in ($src)...'
 
@@ -48,7 +48,7 @@ print $'Start building ($bin)...'
 match [$os.name, $format] {
     ["windows", "msi"] => {
         cargo install cargo-wix
-        cargo build --release --all  # wix needs target/release
+        cargo build --release --all --target $target
     }
     ["windows", "bin"] => {
         cargo build --release --all --target $target
@@ -67,7 +67,14 @@ if ($built_version | str trim | is-empty) {
 }
 
 print $'Cleanup release target path...'
-rm -rf ...(glob $'($target_path)/*.d')
+match [$os.name, $format] {
+    ["windows", "msi"] => {
+        print ' -> skipping for MSI build'
+    }
+    _ => {
+        rm -rf ...(glob $'($target_path)/*.d')
+    }
+}
 
 print $'Copying ($bin) and other release files to ($dest)...'
 match [$os.name, $format] {
@@ -86,7 +93,7 @@ mut archive = $'($dist)/($dest).tar.gz'
 match [$os.name, $format] {
     ["windows", "msi"] => {
         $archive = $'($dist)/($dest).msi'
-        cargo wix --no-build --nocapture --package $bin --output $archive
+        cargo wix --no-build --nocapture --target $target --package $bin --output $archive
     }
     ["windows", "bin"] => {
         $archive = $'($dist)/($dest).zip'
