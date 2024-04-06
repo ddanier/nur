@@ -62,9 +62,9 @@ match [$os.name, $format] {
 }
 
 print $'Check ($bin) version...'
-let built_version = do --ignore-errors { ^$nur_bin --version } | str join
+let built_version = do --ignore-errors { ^$release_bin --version } | str join
 if ($built_version | str trim | is-empty) {
-    print $'(ansi r)Incompatible arch: cannot run ($nur_bin)(ansi reset)'
+    print $'(ansi r)Incompatible arch: cannot run ($release_bin)(ansi reset)'
 } else {
     print $" -> built version is: ($built_version)"
 }
