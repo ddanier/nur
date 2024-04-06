@@ -18,8 +18,8 @@ match [$os.name, $target] {
     ["ubuntu", "aarch64-unknown-linux-gnu"] => {
         sudo apt update
         sudo apt install -y gcc-aarch64-linux-gnu
-        which aarch64-linux-gnu-gcc
-        ^aarch64-linux-gnu-gcc --version
+        $env.CARGO_TARGET_AARCH64_UNKNOWN_LINUX_GNU_LINKER = 'aarch64-linux-gnu-gcc'
+        aarch64-linux-gnu-gcc --version | print
     }
 }
 
