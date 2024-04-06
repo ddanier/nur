@@ -69,6 +69,13 @@ Shell example (like Bash, zsh, ...):
 **Important:** You do **not** need to have `nu` shell installed for `nur` to work. `nur` does
 include the whole `nu` runtime engine and will run as a standalone command.
 
+### Alternative installation methods
+
+* For **MacOS** you can use my unofficial [Homebrew](https://brew.sh/) tap to. All necessary steps
+  are documented in the repository: https://github.com/ddanier/nur-homebrew
+* For **Windows** you can just use the provided binaries available in each release version. Note the
+  `.msi` package might be the easiest to use: https://github.com/ddanier/nur/releases
+
 ## Working with `nur`
 
 As shown above you can use subcommands to `"nur"` to add your tasks. This section will give
