@@ -12,7 +12,7 @@ let dest = $'($bin)-($version)-($target)'
 
 print $'Packaging ($bin) v($version) for ($target) in ($src)...'
 
-print $'Preparing build dependencies...'
+print $'Preparing build dependencies for ($bin)...'
 match [$os, $target] {
     ["ubuntu-latest", "aarch64-unknown-linux-gnu"] => {
         sudo apt update
@@ -48,7 +48,7 @@ print $'Copying ($bin) and other release files to ($dest)...'
 mkdir $dest
 [README.md LICENSE ...(glob $executables)] | each {|it| cp -rv $it $dest } | flatten
 
-print $'Creating release archive...'
+print $'Creating release archive in ($dist)...'
 mkdir $dist
 mut archive = $'($dist)/($dest).tar.gz'
 match $os {
