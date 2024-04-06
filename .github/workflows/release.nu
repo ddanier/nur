@@ -32,15 +32,6 @@ match [$os.name, $format] {
     }
 }
 
-
-# print $'Check ($bin) version...'
-# let ver = do { ^$release_bin --version } | str join
-# if ($ver | str trim | is-empty) {
-#     print $'(ansi r)Incompatible arch: cannot run ($bin)(ansi reset)'
-# } else {
-#     print $ver
-# }
-
 print $'Cleanup release...'
 rm -rf ...(glob $'target/($target)/release/*.d')
 
