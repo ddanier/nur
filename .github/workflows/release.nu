@@ -14,7 +14,7 @@ print $'Packaging ($bin) v($version) for ($target) in ($src)...'
 
 print $'Preparing build dependencies...'
 match [$os, $target] {
-    ["ubuntu-latest", "aarch64-unknown-linux-gnu"] => {
+    ["ubuntu-20.04", "aarch64-unknown-linux-gnu"] => {
         sudo apt update
         sudo apt install -y gcc-aarch64-linux-gnu
     }
