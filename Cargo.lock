@@ -2551,7 +2551,7 @@ checksum = "830b246a0e5f20af87141b25c173cd1b609bd7779a4617d6ec582abaf90870f3"
 
 [[package]]
 name = "nur"
-version = "0.1.15"
+version = "0.1.16"
 dependencies = [
  "miette",
  "nu-ansi-term",
@@ -2567,6 +2567,7 @@ dependencies = [
  "nu-protocol",
  "nu-std",
  "nu-utils",
+ "openssl",
  "tempfile",
  "thiserror",
 ]
@@ -2636,6 +2637,15 @@ source = "registry+https://github.com/rust-lang/crates.io-index"
 checksum = "ff011a302c396a5197692431fc1948019154afc178baf7d8e37367442a4601cf"
 
 [[package]]
+name = "openssl-src"
+version = "300.2.2+3.2.1"
+source = "registry+https://github.com/rust-lang/crates.io-index"
+checksum = "8bbfad0063610ac26ee79f7484739e2b07555a75c42453b89263830b5c8103bc"
+dependencies = [
+ "cc",
+]
+
+[[package]]
 name = "openssl-sys"
 version = "0.9.102"
 source = "registry+https://github.com/rust-lang/crates.io-index"
@@ -2643,6 +2653,7 @@ checksum = "c597637d56fbc83893a35eb0dd04b2b8e7a50c91e64e9493e398b5df4fb45fa2"
 dependencies = [
  "cc",
  "libc",
+ "openssl-src",
  "pkg-config",
  "vcpkg",
 ]
