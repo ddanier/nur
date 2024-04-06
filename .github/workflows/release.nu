@@ -46,9 +46,7 @@ rm -rf ...(glob $'target/($target)/release/*.d')
 
 print $'Copying ($bin) and other release files to ($dest)...'
 mkdir $dest
-print [README.md LICENSE ...(glob $executables)]
 [README.md LICENSE ...(glob $executables)] | each {|it| cp -rv $it $dest } | flatten
-ls $dest
 
 print $'Creating release archive in ($dist)...'
 mkdir $dist
