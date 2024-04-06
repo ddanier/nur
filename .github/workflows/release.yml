@@ -70,7 +70,7 @@ jobs:
 
       - name: Publish archives into draft release
         uses: softprops/action-gh-release@v2
-        if: ${{ startsWith(github.ref, 'refs/tags/') }}
+        # if: ${{ startsWith(github.ref, 'refs/tags/') }}
         with:
           draft: true
           name: "Release ${{ github.ref_name }}"
