@@ -8,11 +8,11 @@ let suffix = match $os.name {
     "windows" => ".exe"
     _ => ""
 }
-let target_path = ('target' | path join $target 'release')
-let release_bin = ($target_path | path join $'($bin)($suffix)')
-let executables = ($target_path | path join $'($bin)*($suffix)')
+let target_path = $'target/($target)/release'
+let release_bin = $'($target_path)/($bin)($suffix)'
+let executables = $'($target_path)/($bin)*($suffix)'
 let dest = $'($bin)-($version)-($target)'
-let dist = ($env.GITHUB_WORKSPACE  | path join 'output')
+let dist = $'($env.GITHUB_WORKSPACE)/output'
 
 def 'hr-line' [] {
     print $'(ansi g)----------------------------------------------------------------------------(ansi reset)'
@@ -71,7 +71,7 @@ if ($built_version | str trim | is-empty) {
 
 hr-line
 print $'Cleanup release target path...'
-rm -rf ...(glob ($target_path | path join '*.d'))
+rm -rf ...(glob $'($target_path)/*.d')
 
 hr-line
 print $'Copying ($bin) and other release files to ($dest)...'
@@ -88,14 +88,14 @@ match [$os.name, $format] {
 hr-line
 print $'Creating release archive in ($dist)...'
 mkdir $dist
-mut archive = $dist | path join $'($dest).tar.gz'
+mut archive = $'($dist)/($dest).tar.gz'
 match [$os.name, $format] {
     ["windows", "msi"] => {
-        $archive = ($dist | path join $'($dest).msi')
+        $archive = $'($dist)/($dest).msi'
         cargo wix --no-build --nocapture --target $target --package $bin --output $archive
     }
     ["windows", "bin"] => {
-        $archive = ($dist | path join $'($dest).zip')
+        $archive = $'($dist)/($dest).zip'
         7z a $archive $dest
     }
     _ => {
@@ -106,4 +106,12 @@ print $' -> archive: ($archive)'
 
 hr-line
 print $'Provide archive to GitHub...'
-echo $"archive=($archive)" | save --append $env.GITHUB_OUTPUT
+match $os.name {
+    "windows" => {
+        # Workaround for https://github.com/softprops/action-gh-release/issues/280
+        echo $"archive=($archive | str replace --all '\' '/')" | save --append $env.GITHUB_OUTPUT
+    }
+    _ => {
+        echo $"archive=($archive)" | save --append $env.GITHUB_OUTPUT
+    }
+}
