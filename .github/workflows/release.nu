@@ -8,11 +8,11 @@ let suffix = match $os.name {
     "windows" => ".exe"
     _ => ""
 }
-let target_path = $'target/($target)/release'
-let release_bin = $'($target_path)/($bin)($suffix)'
-let executables = $'($target_path)/($bin)*($suffix)'
+let target_path = ('target' | path join $target 'release')
+let release_bin = ($target_path | path join $'($bin)($suffix)')
+let executables = ($target_path | path join $'($bin)*($suffix)')
 let dest = $'($bin)-($version)-($target)'
-let dist = $'($env.GITHUB_WORKSPACE)/output'
+let dist = ($env.GITHUB_WORKSPACE  | path join 'output')
 
 def 'hr-line' [] {
     print $'(ansi g)----------------------------------------------------------------------------(ansi reset)'
@@ -71,7 +71,7 @@ if ($built_version | str trim | is-empty) {
 
 hr-line
 print $'Cleanup release target path...'
-rm -rf ...(glob $'($target_path)/*.d')
+rm -rf ...(glob ($target_path | path join '*.d'))
 
 hr-line
 print $'Copying ($bin) and other release files to ($dest)...'
@@ -88,14 +88,14 @@ match [$os.name, $format] {
 hr-line
 print $'Creating release archive in ($dist)...'
 mkdir $dist
-mut archive = $'($dist)/($dest).tar.gz'
+mut archive = $dist | path join $'($dest).tar.gz'
 match [$os.name, $format] {
     ["windows", "msi"] => {
-        $archive = $'($dist)/($dest).msi'
+        $archive = ($dist | path join $'($dest).msi')
         cargo wix --no-build --nocapture --target $target --package $bin --output $archive
     }
     ["windows", "bin"] => {
-        $archive = $'($dist)/($dest).zip'
+        $archive = ($dist | path join $'($dest).zip')
         7z a $archive $dest
     }
     _ => {
