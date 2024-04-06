@@ -1,5 +1,5 @@
 let bin = "nur"
-let os = ($env.OS | parse "{name}-{version}")
+let os = ($env.OS | parse "{name}-{version}" | first)
 let target = $env.TARGET
 let format = $env.FORMAT
 let src = $env.GITHUB_WORKSPACE
