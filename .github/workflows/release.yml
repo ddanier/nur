@@ -20,7 +20,8 @@ jobs:
           - aarch64-pc-windows-msvc
 #          - x86_64-unknown-linux-gnu
 #          - aarch64-unknown-linux-gnu
-        format: ['bin']
+#        format: ['bin']
+        format: ['msi']
         include:
 #          - target: aarch64-apple-darwin
 #            os: macos-latest
