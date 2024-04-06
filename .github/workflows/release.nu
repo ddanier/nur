@@ -13,10 +13,13 @@ let dest = $'($bin)-($version)-($target)'
 print $'Packaging ($bin) v($version) for ($target) in ($src)...'
 
 print $'Preparing build dependencies for ($bin)...'
+print [$os.name, $target]
 match [$os.name, $target] {
     ["ubuntu", "aarch64-unknown-linux-gnu"] => {
         sudo apt update
         sudo apt install -y gcc-aarch64-linux-gnu
+        which aarch64-linux-gnu-gcc
+        ^aarch64-linux-gnu-gcc --version
     }
 }
 
