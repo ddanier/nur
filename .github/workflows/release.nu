@@ -14,6 +14,10 @@ let executables = $'($target_path)/($bin)*($suffix)'
 let dest = $'($bin)-($version)-($target)'
 let dist = $'($env.GITHUB_WORKSPACE)/output'
 
+def 'hr-line' [] {
+    print $'(ansi g)----------------------------------------------------------------------------(ansi reset)'
+}
+
 print $'Config for this run is:'
 {
     bin: $bin
@@ -32,6 +36,7 @@ print $'Config for this run is:'
 
 print $'Packaging ($bin) v($version) for ($target) in ($src)...'
 
+hr-line
 print $'Preparing build dependencies for ($bin)...'
 match [$os.name, $target] {
     ["ubuntu", "aarch64-unknown-linux-gnu"] => {
@@ -39,15 +44,15 @@ match [$os.name, $target] {
         sudo apt install -y gcc-aarch64-linux-gnu
         $env.CARGO_TARGET_AARCH64_UNKNOWN_LINUX_GNU_LINKER = 'aarch64-linux-gnu-gcc'
     }
-}
-
-print $'Start building ($bin)...'
-match [$os.name, $format] {
     ["windows", "msi"] => {
         cargo install cargo-wix
-        cargo build --release --all --target $target
     }
-    ["windows", "bin"] => {
+}
+
+hr-line
+print $'Start building ($bin)...'
+match [$os.name, $format] {
+    ["windows", _] => {
         cargo build --release --all --target $target
     }
     [_, "bin"] => {
@@ -55,6 +60,7 @@ match [$os.name, $format] {
     }
 }
 
+hr-line
 print $'Check ($bin) version...'
 let built_version = do --ignore-errors { ^$release_bin --version } | str join
 if ($built_version | str trim | is-empty) {
@@ -63,9 +69,11 @@ if ($built_version | str trim | is-empty) {
     print $" -> built version is: ($built_version)"
 }
 
+hr-line
 print $'Cleanup release target path...'
 rm -rf ...(glob $'($target_path)/*.d')
 
+hr-line
 print $'Copying ($bin) and other release files to ($dest)...'
 match [$os.name, $format] {
     ["windows", "msi"] => {
@@ -77,6 +85,7 @@ match [$os.name, $format] {
     }
 }
 
+hr-line
 print $'Creating release archive in ($dist)...'
 mkdir $dist
 mut archive = $'($dist)/($dest).tar.gz'
@@ -95,5 +104,6 @@ match [$os.name, $format] {
 }
 print $' -> archive: ($archive)'
 
+hr-line
 print $'Provide archive to GitHub...'
 echo $"archive=($archive)" | save --append $env.GITHUB_OUTPUT
