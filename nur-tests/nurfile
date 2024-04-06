@@ -61,8 +61,6 @@ def "nur test-invalid-executable" [] {
         error make {"msg": "Did not fail, this is an error"}
     } catch {
         # all ok
-                error make {"msg": "Did not fail, this is an error"}
-
     }
 }
 
