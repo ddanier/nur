@@ -36,7 +36,7 @@ def "nur test-stdin" [] {
     std assert ("inner" | run-nur --stdin exec-stdin | str contains "BEFORE inner AFTER")
 }
 
-def "nur should-fail" [] {
+def "nur do-failed-execution" [] {
     if (is-windows) {
         cmd /c "exit 1"
     } else {
@@ -45,17 +45,31 @@ def "nur should-fail" [] {
 }
 def "nur test-failed-execution" [] {
     try {
-        run-nur should-fail
+        run-nur do-failed-execution
         error make {"msg": "Did not fail, this is an error"}
     } catch {
         # all ok
     }
 }
 
+def "nur do-invalid-executable" [] {
+    ^does-not-exist-at-all-will-not-exist-ever
+}
+def "nur test-invalid-executable" [] {
+    try {
+        run-nur do-invalid-executable o+e>| ignore
+        error make {"msg": "Did not fail, this is an error"}
+    } catch {
+        # all ok
+                error make {"msg": "Did not fail, this is an error"}
+
+    }
+}
+
 # Utils and other commands
 
 def is-windows [] {
-    $nu.os-info.name == "windows"
+    $nu.os-info.name == 'windows'
 }
 
 def --wrapped run-nur [
@@ -69,13 +83,26 @@ def "nur prepare" [] {
 }
 
 def "nur run-all" [] {
-    let tests = (scope commands | filter { |it| $it.name starts-with "nur test-" } | each { |it| $it.name | split row " " })
+    let tests = (scope commands | filter { |it| $it.name starts-with 'nur test-' } | each { |it| $it.name | split row ' ' })
 
-    $tests | each {
-        |it|
-        $it | str join " " | print
-        run-nur $it.1
+    let failed_tests = (
+        $tests | each {
+            |it|
+            $it | str join " " | print -n
+            let was_ok: bool = try {
+                run-nur $it.1 o+e>| ignore
+                print $'...(ansi green)ok(ansi reset)'
+                true  # mark as ok
+            } catch {
+                print $'...(ansi red)failed(ansi reset)'
+                false  # mark as failed
+            }
+
+            if $was_ok { null } else { $it.1 }
+        }
+    )
+
+    if ($failed_tests | is-not-empty) {
+        error make {"msg": $'Some tests did fail, please fix those: ($failed_tests | str join ", ")'}
     }
-
-    null
 }
