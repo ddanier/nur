@@ -28,9 +28,13 @@ thiserror = "1.0.58"
 miette = { version = "7.2", features = ["fancy-no-backtrace"] }
 nu-ansi-term = "0.50.0"
 
+[target.'cfg(not(target_os = "windows"))'.dependencies]
+openssl = { version = "0.10", features = ["vendored"], optional = true }
+
 [features]
 default = []
-dataframe = ["dep:nu-cmd-dataframe", "nu-cmd-dataframe/dataframe"]
+dataframe = ["dep:nu-cmd-dataframe", "nu-cmd-dataframe/dataframe", "nu-cmd-lang/dataframe"]
+static-link-openssl = ["dep:openssl", "nu-cmd-lang/static-link-openssl"]
 debug = []
 
 [dev-dependencies]
