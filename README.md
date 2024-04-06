@@ -336,12 +336,12 @@ def "nur something" [] {
 
 If your helper commands get more sophisticated you may want to use a `nu` module instead of
 putting all of your code into one big `nurfile`. `nur` will automatically add the directory
-called `.nurscripts/` into `$env.NU_LIB_DIRS`. This allows you to define `nu` modules there and
+called `.nur/scripts/` into `$env.NU_LIB_DIRS`. This allows you to define `nu` modules there and
 then use those in your `nurfile`.
 
 Basic hello world example:
 ```nu-script
-# .nurscripts/hello-world.nu
+# .nur/scripts/hello-world.nu
 
 export def main [] {
     print "Hello world"
