@@ -13,22 +13,22 @@ let dest = $'($bin)-($version)-($target)'
 print $'Packaging ($bin) v($version) for ($target) in ($src)...'
 
 print $'Preparing build dependencies for ($bin)...'
-match [$os.name, $os.version, $target] {
-    ["ubuntu", _, "aarch64-unknown-linux-gnu"] => {
+match [$os.name, $target] {
+    ["ubuntu", "aarch64-unknown-linux-gnu"] => {
         sudo apt update
         sudo apt install -y gcc-aarch64-linux-gnu
     }
 }
 
 print $'Start building ($bin)...'
-match $format {
-    "bin" => {
-        cargo build --release --all --target $target
-    }
-    "msi" => {
+match [$os.name, $format] {
+    ["windows", "msi"] => {
         cargo install cargo-wix
         cargo build --release --all  # wix needs target/release
         cargo wix --no-build --nocapture --package $bin --output #TODO
+    }
+    [_, "bin"] => {
+        cargo build --release --all --target $target
     }
 }
 
@@ -51,8 +51,11 @@ mkdir $dest
 print $'Creating release archive in ($dist)...'
 mkdir $dist
 mut archive = $'($dist)/($dest).tar.gz'
-match $os.name {
-    "windows" => {
+match [$os.name, $format] {
+    ["windows", "msi"] => {
+        print "NOT SUPPORTED YET"  # TODO
+    }
+    ["windows", "bin"] => {
         $archive = $'($dist)/($dest).zip'
         7z a $archive $dest
     }
