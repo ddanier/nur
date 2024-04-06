@@ -31,7 +31,7 @@ handle. You may use `nur --help <task-name>` to see the help for an available co
 
 Your tasks then can do whatever you want them to do in `nu` script. This allows for very structured
 usage of for example docker to run/manage your project needs. But it can also execute simple commands
-like you would normally do in your shell (like `npm ci` or something). `nur` is not tight to any
+like you would normally do in your shell (like `npm ci` or something). `nur` is not tied to any
 programming language, packaging system or anything. As in the end the `nurfile` is basically a
 normal `nu` script you can put into this whatever you like.
 
@@ -425,9 +425,3 @@ In its current state `nur` is more or less a **beta** software. I wanted to put 
 receive some feedback. But I am only just starting using this in some production setup myself.
 So feel free to poke around with this, but be aware this is far from being finished or anything.
 Meaning: There might be dragons!
-
-## Contributing
-
-If you want to contribute to this project, feel free to just fork the project, create a dev
-branch in your fork and then create a pull request (PR). If you are unsure about whether
-your changes really suit the project please create an issue first, to talk about this.
