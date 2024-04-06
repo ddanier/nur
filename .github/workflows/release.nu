@@ -1,11 +1,11 @@
 let bin = "nur"
-let os = $env.OS
+let os = ($env.OS | parse "{name}-{version}")
 let target = $env.TARGET
 let format = $env.FORMAT
 let src = $env.GITHUB_WORKSPACE
 let version = (open Cargo.toml | get package.version)
-let suffix = if $os == 'windows-latest' { '.exe' }
-let nur_bin = $'target/($target)/release/($bin)($suffix)'
+let suffix = if $os.name == 'windows' { '.exe' }
+let release_bin = $'target/($target)/release/($bin)($suffix)'
 let executables = $'target/($target)/release/($bin)*($suffix)'
 let dist = $'($env.GITHUB_WORKSPACE)/output'
 let dest = $'($bin)-($version)-($target)'
@@ -13,8 +13,8 @@ let dest = $'($bin)-($version)-($target)'
 print $'Packaging ($bin) v($version) for ($target) in ($src)...'
 
 print $'Preparing build dependencies for ($bin)...'
-match [$os, $target] {
-    ["ubuntu-latest", "aarch64-unknown-linux-gnu"] => {
+match [$os.name, $os.version, $target] {
+    ["ubuntu", _, "aarch64-unknown-linux-gnu"] => {
         sudo apt update
         sudo apt install -y gcc-aarch64-linux-gnu
     }
@@ -34,7 +34,7 @@ match $format {
 
 
 # print $'Check ($bin) version...'
-# let ver = do { ^$nur_bin --version } | str join
+# let ver = do { ^$release_bin --version } | str join
 # if ($ver | str trim | is-empty) {
 #     print $'(ansi r)Incompatible arch: cannot run ($bin)(ansi reset)'
 # } else {
@@ -51,8 +51,8 @@ mkdir $dest
 print $'Creating release archive in ($dist)...'
 mkdir $dist
 mut archive = $'($dist)/($dest).tar.gz'
-match $os {
-    "windows-latest" => {
+match $os.name {
+    "windows" => {
         $archive = $'($dist)/($dest).zip'
         7z a $archive $dest
     }
