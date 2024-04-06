@@ -38,13 +38,13 @@ print $'Packaging ($bin) v($version) for ($target) in ($src)...'
 
 hr-line
 print $'Preparing build dependencies for ($bin)...'
-match [$os.name, $target] {
-    ["ubuntu", "aarch64-unknown-linux-gnu"] => {
+match [$os.name, $format, $target] {
+    ["ubuntu", "bin", "aarch64-unknown-linux-gnu"] => {
         sudo apt update
         sudo apt install -y gcc-aarch64-linux-gnu
         $env.CARGO_TARGET_AARCH64_UNKNOWN_LINUX_GNU_LINKER = 'aarch64-linux-gnu-gcc'
     }
-    ["windows", "msi"] => {
+    ["windows", "msi", _] => {
         cargo install cargo-wix
     }
 }
