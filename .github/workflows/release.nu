@@ -27,8 +27,11 @@ match [$os.name, $format] {
         cargo build --release --all  # wix needs target/release
         cargo wix --no-build --nocapture --package $bin --output #TODO
     }
-    [_, "bin"] => {
+    ["windows", "bin"] => {
         cargo build --release --all --target $target
+    }
+    [_, "bin"] => {
+        cargo build --release --all --target $target --features=static-link-openssl
     }
 }
 
