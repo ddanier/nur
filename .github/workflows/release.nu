@@ -12,7 +12,7 @@ let target_path = match [$os.name, $format] {
     ["windows", "msi"] => $'target/release/'
     _ => $'target/($target)/release/'
 }
-let release_bin = match $'($target_path)/($bin)($suffix)'
+let release_bin = $'($target_path)/($bin)($suffix)'
 let executables = $'($target_path)/($bin)*($suffix)'
 let dist = $'($env.GITHUB_WORKSPACE)/output'
 let dest = $'($bin)-($version)-($target)'
