@@ -18,7 +18,6 @@ impl Command for Nur {
 
         signature = signature
             .usage("nur - a taskrunner based on nu shell.")
-            .allows_unknown_args()
             // .named(
             //     "config",
             //     SyntaxShape::String,
