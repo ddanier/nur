@@ -11,7 +11,7 @@ use std::fs;
 use std::path::Path;
 use std::sync::Arc;
 
-pub(crate) fn init_engine_state(project_path: &Path) -> NurResult<EngineState> {
+pub(crate) fn init_engine_state<P: AsRef<Path>>(project_path: P) -> NurResult<EngineState> {
     let engine_state = nu_cmd_lang::create_default_context();
     let engine_state = nu_command::add_shell_command_context(engine_state);
     let engine_state = nu_cmd_extra::add_extra_command_context(engine_state);
@@ -19,27 +19,14 @@ pub(crate) fn init_engine_state(project_path: &Path) -> NurResult<EngineState> {
     let engine_state = nu_cmd_dataframe::add_dataframe_context(engine_state);
     let engine_state = nu_cli::add_cli_context(engine_state);
     let engine_state = nu_explore::add_explore_context(engine_state);
+    let engine_state = crate::commands::create_nu_context(engine_state);
+    let engine_state = crate::commands::create_nur_context(engine_state);
 
     // Prepare engine state to be changed
     let mut engine_state = engine_state;
 
-    // Custom additions only used in cli
-    let delta = {
-        let mut working_set = StateWorkingSet::new(&engine_state);
-        working_set.add_decl(Box::new(nu_cli::NuHighlight));
-        working_set.add_decl(Box::new(nu_cli::Print));
-        working_set.render()
-    };
-
-    if let Err(err) = engine_state.merge_delta(delta) {
-        report_error_new(&engine_state, &err);
-        return Err(NurError::InitError(String::from(
-            "Could not load CLI functions",
-        )));
-    }
-
     // First, set up env vars as strings only
-    gather_parent_env_vars(&mut engine_state, project_path);
+    gather_parent_env_vars(&mut engine_state, project_path.as_ref());
     engine_state.add_env_var(
         "NU_VERSION".to_string(),
         Value::string(NU_VERSION, Span::unknown()),
@@ -62,18 +49,13 @@ pub(crate) fn init_engine_state(project_path: &Path) -> NurResult<EngineState> {
 
 #[derive(Clone)]
 pub(crate) struct NurEngine {
-    engine_state: EngineState,
-    stack: Stack,
+    pub(crate) engine_state: EngineState,
+    pub(crate) stack: Stack,
+
+    pub(crate) use_color: bool,
 }
 
 impl NurEngine {
-    pub(crate) fn new(engine_state: EngineState, stack: Stack) -> NurEngine {
-        NurEngine {
-            engine_state,
-            stack,
-        }
-    }
-
     fn _parse_nu_script(
         &mut self,
         file_path: Option<&str>,
@@ -239,9 +221,12 @@ impl NurEngine {
 
 impl From<EngineState> for NurEngine {
     fn from(engine_state: EngineState) -> NurEngine {
+        let use_color = engine_state.get_config().use_ansi_coloring;
+
         NurEngine {
             engine_state,
             stack: Stack::new(),
+            use_color,
         }
     }
 }

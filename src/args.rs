@@ -49,7 +49,6 @@ pub(crate) fn parse_commandline_args(
 ) -> Result<NurCliArgs, ShellError> {
     let (block, delta) = {
         let mut working_set = StateWorkingSet::new(engine_state);
-        working_set.add_decl(Box::new(Nur));
 
         let output = parse(&mut working_set, None, commandline_args.as_bytes(), false);
         if let Some(err) = working_set.parse_errors.first() {
@@ -58,7 +57,6 @@ pub(crate) fn parse_commandline_args(
             std::process::exit(1);
         }
 
-        working_set.hide_decl(NUR_NAME.as_bytes());
         (output, working_set.render())
     };
 

@@ -7,6 +7,7 @@ mod errors;
 mod names;
 mod nu_version;
 mod path;
+mod state;
 
 use crate::args::{gather_commandline_args, parse_commandline_args};
 use crate::commands::Nur;
@@ -15,16 +16,15 @@ use crate::defaults::{get_default_nur_config, get_default_nur_env};
 use crate::engine::init_engine_state;
 use crate::errors::NurError;
 use crate::names::{
-    NUR_CONFIG_CONFIG_FILENAME, NUR_CONFIG_ENV_FILENAME, NUR_CONFIG_LIB_PATH, NUR_CONFIG_PATH,
-    NUR_ENV_NU_LIB_DIRS, NUR_FILE, NUR_LOCAL_FILE, NUR_NAME, NUR_VAR_CONFIG_DIR,
-    NUR_VAR_DEFAULT_LIB_DIR, NUR_VAR_PROJECT_PATH, NUR_VAR_RUN_PATH, NUR_VAR_TASK_NAME,
+    NUR_ENV_NU_LIB_DIRS, NUR_NAME, NUR_VAR_CONFIG_DIR, NUR_VAR_DEFAULT_LIB_DIR,
+    NUR_VAR_PROJECT_PATH, NUR_VAR_RUN_PATH, NUR_VAR_TASK_NAME,
 };
-use crate::path::find_project_path;
+use crate::state::NurState;
 use engine::NurEngine;
 use miette::Result;
 use nu_ansi_term::Color;
 use nu_cmd_base::util::get_init_cwd;
-use nu_protocol::engine::{Stack, StateWorkingSet};
+use nu_protocol::engine::StateWorkingSet;
 use nu_protocol::{
     eval_const::create_nu_constant, BufferedReader, PipelineData, RawStream, Record, Span, Type,
     Value, NU_VARIABLE_ID,
@@ -34,21 +34,19 @@ use std::io::BufReader;
 use std::process::ExitCode;
 
 fn main() -> Result<ExitCode, miette::ErrReport> {
-    // Get initial directory details
+    // Initialise nur state
     let run_path = get_init_cwd();
-    let found_project_path = find_project_path(&run_path);
-    let has_project_path = found_project_path.is_some();
-    let project_path = found_project_path.unwrap_or(&run_path);
+    let nur_state = NurState::new(run_path);
 
-    // Initialize nu engine state and stack
-    let mut engine_state = init_engine_state(project_path)?;
-    let mut stack = Stack::new();
-    let use_color = engine_state.get_config().use_ansi_coloring;
+    // Setup nur engine
+    let engine_state = init_engine_state(&nur_state.project_path)?;
+    let mut nur_engine = NurEngine::from(engine_state);
 
     // Parse args
     let (args_to_nur, task_name, args_to_task) = gather_commandline_args();
-    let parsed_nur_args = parse_commandline_args(&args_to_nur.join(" "), &mut engine_state)
-        .unwrap_or_else(|_| std::process::exit(1));
+    let parsed_nur_args =
+        parse_commandline_args(&args_to_nur.join(" "), &mut nur_engine.engine_state)
+            .unwrap_or_else(|_| std::process::exit(1));
 
     #[cfg(feature = "debug")]
     if parsed_nur_args.debug_output {
@@ -60,14 +58,13 @@ fn main() -> Result<ExitCode, miette::ErrReport> {
     }
 
     // Show hints for compatibility issues
-    if has_project_path {
-        show_nurscripts_hint(project_path, use_color);
+    if nur_state.has_project_path {
+        show_nurscripts_hint(&nur_state.project_path, nur_engine.use_color);
     }
 
     // Handle execution without project path, only allow to show help, abort otherwise
-    if !has_project_path {
+    if !nur_state.has_project_path {
         if parsed_nur_args.show_help {
-            let mut nur_engine = NurEngine::new(engine_state, stack);
             nur_engine.print_help(&Nur);
 
             std::process::exit(0);
@@ -77,49 +74,51 @@ fn main() -> Result<ExitCode, miette::ErrReport> {
     }
 
     // Base path for nur config/env
-    let nur_config_dir = project_path.join(NUR_CONFIG_PATH);
     #[cfg(feature = "debug")]
     if parsed_nur_args.debug_output {
-        eprintln!("nur config path: {:?}", nur_config_dir);
+        eprintln!("nur config dir: {:?}", nur_state.config_dir);
     }
 
     // Set default scripts path
-    let mut nur_lib_dir_path = nur_config_dir.clone();
-    nur_lib_dir_path.push(NUR_CONFIG_LIB_PATH);
-    engine_state.add_env_var(
+    nur_engine.engine_state.add_env_var(
         NUR_ENV_NU_LIB_DIRS.to_string(),
-        Value::test_string(nur_lib_dir_path.to_string_lossy()),
+        Value::test_string(nur_state.lib_dir_path.to_string_lossy()),
     );
     #[cfg(feature = "debug")]
     if parsed_nur_args.debug_output {
-        eprintln!("nur scripts path: {:?}", nur_lib_dir_path);
+        eprintln!("nur lib path (scripts): {:?}", nur_state.lib_dir_path);
     }
 
     // Set config and env paths to .nur versions
-    let mut nur_env_path = nur_config_dir.clone();
-    nur_env_path.push(NUR_CONFIG_ENV_FILENAME);
-    engine_state.set_config_path("env-path", nur_env_path.clone());
-    let mut nur_config_path = nur_config_dir.clone();
-    nur_config_path.push(NUR_CONFIG_CONFIG_FILENAME);
-    engine_state.set_config_path("config-path", nur_config_path.clone());
+    nur_engine
+        .engine_state
+        .set_config_path("env-path", nur_state.env_path.clone());
+    nur_engine
+        .engine_state
+        .set_config_path("config-path", nur_state.config_path.clone());
 
     // Set up the $nu constant before evaluating any files (need to have $nu available in them)
     let nu_const = create_nu_constant(
-        &engine_state,
+        &nur_engine.engine_state,
         PipelineData::empty().span().unwrap_or_else(Span::unknown),
     )?;
-    engine_state.set_variable_const_val(NU_VARIABLE_ID, nu_const);
+    nur_engine
+        .engine_state
+        .set_variable_const_val(NU_VARIABLE_ID, nu_const);
 
     // Set up the $nur constant record (like $nu)
     let mut nur_record = Record::new();
     nur_record.push(
         NUR_VAR_RUN_PATH,
-        Value::string(String::from(run_path.to_str().unwrap()), Span::unknown()),
+        Value::string(
+            String::from(nur_state.run_path.to_str().unwrap()),
+            Span::unknown(),
+        ),
     );
     nur_record.push(
         NUR_VAR_PROJECT_PATH,
         Value::string(
-            String::from(project_path.to_str().unwrap()),
+            String::from(nur_state.project_path.to_str().unwrap()),
             Span::unknown(),
         ),
     );
@@ -130,55 +129,52 @@ fn main() -> Result<ExitCode, miette::ErrReport> {
     nur_record.push(
         NUR_VAR_CONFIG_DIR,
         Value::string(
-            String::from(nur_config_dir.to_str().unwrap()),
+            String::from(nur_state.config_dir.to_str().unwrap()),
             Span::unknown(),
         ),
     );
     nur_record.push(
         NUR_VAR_DEFAULT_LIB_DIR,
         Value::string(
-            String::from(nur_lib_dir_path.to_str().unwrap()),
+            String::from(nur_state.lib_dir_path.to_str().unwrap()),
             Span::unknown(),
         ),
     );
-    let mut working_set = StateWorkingSet::new(&engine_state);
+    let mut working_set = StateWorkingSet::new(&nur_engine.engine_state);
     let nur_var_id = working_set.add_variable(
         NUR_NAME.as_bytes().into(),
         Span::unknown(),
         Type::Any,
         false,
     );
-    stack.add_var(nur_var_id, Value::record(nur_record, Span::unknown()));
-    engine_state.merge_delta(working_set.render())?;
-
-    // Switch to using nur engine using the already setup engine state and stack
-    let mut nur_engine = NurEngine::new(engine_state, stack);
+    nur_engine
+        .stack
+        .add_var(nur_var_id, Value::record(nur_record, Span::unknown()));
+    nur_engine.engine_state.merge_delta(working_set.render())?;
 
     // Load env and config
-    if nur_env_path.exists() {
-        nur_engine.source_and_merge_env(&nur_env_path, PipelineData::empty())?;
+    if nur_state.env_path.exists() {
+        nur_engine.source_and_merge_env(&nur_state.env_path, PipelineData::empty())?;
     } else {
         nur_engine.eval_and_merge_env(get_default_nur_env(), PipelineData::empty())?;
     }
-    if nur_config_path.exists() {
-        nur_engine.source_and_merge_env(&nur_config_path, PipelineData::empty())?;
+    if nur_state.config_path.exists() {
+        nur_engine.source_and_merge_env(&nur_state.config_path, PipelineData::empty())?;
     } else {
         nur_engine.eval_and_merge_env(get_default_nur_config(), PipelineData::empty())?;
     }
 
     // Load task files
-    let nurfile_path = project_path.join(NUR_FILE);
-    let local_nurfile_path = project_path.join(NUR_LOCAL_FILE);
     #[cfg(feature = "debug")]
     if parsed_nur_args.debug_output {
-        eprintln!("nurfile path: {:?}", nurfile_path);
-        eprintln!("nurfile local path: {:?}", local_nurfile_path);
+        eprintln!("nurfile path: {:?}", nur_state.nurfile_path);
+        eprintln!("nurfile local path: {:?}", nur_state.local_nurfile_path);
     }
-    if nurfile_path.exists() {
-        nur_engine.source(nurfile_path, PipelineData::empty())?;
+    if nur_state.nurfile_path.exists() {
+        nur_engine.source(nur_state.nurfile_path, PipelineData::empty())?;
     }
-    if local_nurfile_path.exists() {
-        nur_engine.source(local_nurfile_path, PipelineData::empty())?;
+    if nur_state.local_nurfile_path.exists() {
+        nur_engine.source(nur_state.local_nurfile_path, PipelineData::empty())?;
     }
 
     // Handle list tasks
@@ -255,7 +251,7 @@ fn main() -> Result<ExitCode, miette::ErrReport> {
         }
     } else {
         println!("nur version {}", env!("CARGO_PKG_VERSION"));
-        println!("Project path {:?}", project_path);
+        println!("Project path {:?}", nur_state.project_path);
         println!("Executing task {}", task_name);
         println!();
         exit_code = nur_engine.eval_and_print(full_task_call, input)?;
@@ -266,12 +262,12 @@ fn main() -> Result<ExitCode, miette::ErrReport> {
         if exit_code == 0 {
             println!(
                 "{}Task execution successful{}",
-                if use_color {
+                if nur_engine.use_color {
                     Color::Green.prefix().to_string()
                 } else {
                     String::from("")
                 },
-                if use_color {
+                if nur_engine.use_color {
                     Color::Green.suffix().to_string()
                 } else {
                     String::from("")
@@ -280,12 +276,12 @@ fn main() -> Result<ExitCode, miette::ErrReport> {
         } else {
             println!(
                 "{}Task execution failed{}",
-                if use_color {
+                if nur_engine.use_color {
                     Color::Red.prefix().to_string()
                 } else {
                     String::from("")
                 },
-                if use_color {
+                if nur_engine.use_color {
                     Color::Red.suffix().to_string()
                 } else {
                     String::from("")
