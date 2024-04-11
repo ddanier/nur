@@ -32,7 +32,7 @@ print $'Config for this run is:'
     executables: $executables
     dest: $dest
     dist: $dist
-} | table -e | print
+} | table --expand | print
 
 print $'Packaging ($bin) v($version) for ($target) in ($src)...'
 
