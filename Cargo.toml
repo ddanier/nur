@@ -2,6 +2,7 @@
 name = "nur"
 description = "nur - a taskrunner based on nu shell"
 version = "0.1.16"
+rust-version = "1.77.2"
 edition = "2021"
 license = "MIT"
 homepage = "https://github.com/ddanier/nur"
@@ -12,18 +13,18 @@ keywords = ["nu", "taskrunner", "development", "command-line"]
 categories = ["command-line-utilities", "development-tools"]
 
 [dependencies]
-nu-cli = "0.92.1"
-nu-cmd-base = "0.92.1"
-nu-cmd-dataframe = { version = "0.92.1", optional = true }
-nu-cmd-extra = "0.92.1"
-nu-cmd-lang = "0.92.1"
-nu-command = "0.92.1"
-nu-engine = "0.92.1"
-nu-explore = "0.92.1"
-nu-parser = "0.92.1"
-nu-protocol = "0.92.1"
-nu-std = "0.92.1"
-nu-utils = "0.92.1"
+nu-cli = "0.92.2"
+nu-cmd-base = "0.92.2"
+nu-cmd-dataframe = { version = "0.92.2", optional = true }
+nu-cmd-extra = "0.92.2"
+nu-cmd-lang = "0.92.2"
+nu-command = "0.92.2"
+nu-engine = "0.92.2"
+nu-explore = "0.92.2"
+nu-parser = "0.92.2"
+nu-protocol = "0.92.2"
+nu-std = "0.92.2"
+nu-utils = "0.92.2"
 thiserror = "1.0.58"
 miette = { version = "7.2", features = ["fancy-no-backtrace"] }
 nu-ansi-term = "0.50.0"
