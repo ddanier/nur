@@ -117,3 +117,140 @@ pub(crate) struct NurArgs {
     #[cfg(feature = "debug")]
     pub(crate) debug_output: bool,
 }
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+    use crate::commands::create_nur_context;
+    use crate::engine::init_engine_state;
+    use nu_cmd_base::util::get_init_cwd;
+
+    #[test]
+    fn test_gather_commandline_args_splits_on_task_name() {
+        let args = vec![
+            String::from("nur"),
+            String::from("--quiet"),
+            String::from("some_task_name"),
+            String::from("--task-option"),
+            String::from("task-value"),
+        ];
+        let (nur_args, task_name, task_args) = gather_commandline_args(args);
+        assert_eq!(nur_args, vec![String::from("nur"), String::from("--quiet")]);
+        assert_eq!(task_name, "some_task_name");
+        assert_eq!(
+            task_args,
+            vec![String::from("--task-option"), String::from("task-value")]
+        );
+    }
+
+    #[test]
+    fn test_gather_commandline_args_handles_missing_nur_args() {
+        let args = vec![
+            String::from("nur"),
+            String::from("some_task_name"),
+            String::from("--task-option"),
+            String::from("task-value"),
+        ];
+        let (nur_args, task_name, task_args) = gather_commandline_args(args);
+        assert_eq!(nur_args, vec![String::from("nur")]);
+        assert_eq!(task_name, "some_task_name");
+        assert_eq!(
+            task_args,
+            vec![String::from("--task-option"), String::from("task-value")]
+        );
+    }
+
+    #[test]
+    fn test_gather_commandline_args_handles_missing_task_name() {
+        let args = vec![String::from("nur"), String::from("--help")];
+        let (nur_args, task_name, task_args) = gather_commandline_args(args);
+        assert_eq!(nur_args, vec![String::from("nur"), String::from("--help")]);
+        assert_eq!(task_name, "");
+        assert_eq!(task_args, vec![] as Vec<String>);
+    }
+
+    #[test]
+    fn test_gather_commandline_args_handles_missing_task_args() {
+        let args = vec![
+            String::from("nur"),
+            String::from("--quiet"),
+            String::from("some_task_name"),
+        ];
+        let (nur_args, task_name, task_args) = gather_commandline_args(args);
+        assert_eq!(nur_args, vec![String::from("nur"), String::from("--quiet")]);
+        assert_eq!(task_name, "some_task_name");
+        assert_eq!(task_args, vec![] as Vec<String>);
+    }
+
+    #[test]
+    fn test_gather_commandline_args_handles_no_args_at_all() {
+        let args = vec![String::from("nur")];
+        let (nur_args, task_name, task_args) = gather_commandline_args(args);
+        assert_eq!(nur_args, vec![String::from("nur")]);
+        assert_eq!(task_name, "");
+        assert_eq!(task_args, vec![] as Vec<String>);
+    }
+
+    fn _create_minimal_engine_for_erg_parsing() -> EngineState {
+        let init_cwd = get_init_cwd();
+        let engine_state = init_engine_state(&init_cwd).unwrap();
+        let engine_state = create_nur_context(engine_state);
+
+        engine_state
+    }
+
+    #[test]
+    fn test_parse_commandline_args_without_args() {
+        let mut engine_state = _create_minimal_engine_for_erg_parsing();
+
+        let nur_args = parse_commandline_args("nur", &mut engine_state).unwrap();
+        assert_eq!(nur_args.list_tasks, false);
+        assert_eq!(nur_args.quiet_execution, false);
+        assert_eq!(nur_args.attach_stdin, false);
+        assert_eq!(nur_args.show_help, false);
+    }
+
+    #[test]
+    fn test_parse_commandline_args_list() {
+        let mut engine_state = _create_minimal_engine_for_erg_parsing();
+
+        let nur_args = parse_commandline_args("nur --list", &mut engine_state).unwrap();
+        assert_eq!(nur_args.list_tasks, true);
+        assert_eq!(nur_args.quiet_execution, false);
+        assert_eq!(nur_args.attach_stdin, false);
+        assert_eq!(nur_args.show_help, false);
+    }
+
+    #[test]
+    fn test_parse_commandline_args_quiet() {
+        let mut engine_state = _create_minimal_engine_for_erg_parsing();
+
+        let nur_args = parse_commandline_args("nur --quiet", &mut engine_state).unwrap();
+        assert_eq!(nur_args.list_tasks, false);
+        assert_eq!(nur_args.quiet_execution, true);
+        assert_eq!(nur_args.attach_stdin, false);
+        assert_eq!(nur_args.show_help, false);
+    }
+
+    #[test]
+    fn test_parse_commandline_args_stdin() {
+        let mut engine_state = _create_minimal_engine_for_erg_parsing();
+
+        let nur_args = parse_commandline_args("nur --stdin", &mut engine_state).unwrap();
+        assert_eq!(nur_args.list_tasks, false);
+        assert_eq!(nur_args.quiet_execution, false);
+        assert_eq!(nur_args.attach_stdin, true);
+        assert_eq!(nur_args.show_help, false);
+    }
+
+    #[test]
+    fn test_parse_commandline_args_help() {
+        let mut engine_state = _create_minimal_engine_for_erg_parsing();
+
+        let nur_args = parse_commandline_args("nur --help", &mut engine_state).unwrap();
+        assert_eq!(nur_args.list_tasks, false);
+        assert_eq!(nur_args.quiet_execution, false);
+        assert_eq!(nur_args.attach_stdin, false);
+        assert_eq!(nur_args.show_help, true);
+    }
+}
