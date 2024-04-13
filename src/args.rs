@@ -1,8 +1,8 @@
 use crate::commands::Nur;
 use crate::names::NUR_NAME;
 use nu_engine::{get_full_help, CallExt};
+use nu_parser::escape_for_script_arg;
 use nu_parser::parse;
-use nu_parser::{escape_for_script_arg, escape_quote_string};
 use nu_protocol::report_error;
 use nu_protocol::{
     ast::Expr,
@@ -10,29 +10,30 @@ use nu_protocol::{
     ShellError,
 };
 use nu_utils::stdout_write_all_and_flush;
+use std::env::Args;
 
-pub(crate) fn gather_commandline_args() -> (Vec<String>, String, Vec<String>) {
+pub(crate) fn gather_commandline_args(args: &mut Args) -> (Vec<String>, String, Vec<String>) {
     let mut args_to_nur = Vec::from([NUR_NAME.into()]);
     let mut task_name = String::new();
-    let mut args = std::env::args();
 
     args.next(); // Ignore own name
+    #[allow(clippy::while_let_on_iterator)]
     while let Some(arg) = args.next() {
         if !arg.starts_with('-') {
             task_name = arg;
             break;
         }
 
-        let flag_value = match arg.as_ref() {
-            "--config" => args.next().map(|a| escape_quote_string(&a)),
-            _ => None,
-        };
+        // let flag_value = match arg.as_ref() {
+        //     // "--some-file" => args.next().map(|a| escape_quote_string(&a)),
+        //     _ => None,
+        // };
 
         args_to_nur.push(arg);
 
-        if let Some(flag_value) = flag_value {
-            args_to_nur.push(flag_value);
-        }
+        // if let Some(flag_value) = flag_value {
+        //     args_to_nur.push(flag_value);
+        // }
     }
 
     let args_to_task = if !task_name.is_empty() {
@@ -46,7 +47,7 @@ pub(crate) fn gather_commandline_args() -> (Vec<String>, String, Vec<String>) {
 pub(crate) fn parse_commandline_args(
     commandline_args: &str,
     engine_state: &mut EngineState,
-) -> Result<NurCliArgs, ShellError> {
+) -> Result<NurArgs, ShellError> {
     let (block, delta) = {
         let mut working_set = StateWorkingSet::new(engine_state);
 
@@ -75,29 +76,6 @@ pub(crate) fn parse_commandline_args(
             #[cfg(feature = "debug")]
             let debug_output = call.has_flag(engine_state, &mut stack, "debug")?;
 
-            // fn extract_contents(
-            //     expression: Option<&Expression>,
-            // ) -> Result<Option<Spanned<String>>, ShellError> {
-            //     if let Some(expr) = expression {
-            //         let str = expr.as_string();
-            //         if let Some(str) = str {
-            //             Ok(Some(Spanned {
-            //                 item: str,
-            //                 span: expr.span,
-            //             }))
-            //         } else {
-            //             Err(ShellError::TypeMismatch {
-            //                 err_message: "string".into(),
-            //                 span: expr.span,
-            //             })
-            //         }
-            //     } else {
-            //         Ok(None)
-            //     }
-            // }
-            //
-            // let config_file = extract_contents(config_file)?;
-
             if call.has_flag(engine_state, &mut stack, "version")? {
                 let version = env!("CARGO_PKG_VERSION").to_string();
                 let _ = std::panic::catch_unwind(move || {
@@ -107,8 +85,7 @@ pub(crate) fn parse_commandline_args(
                 std::process::exit(0);
             }
 
-            return Ok(NurCliArgs {
-                // config_file,
+            return Ok(NurArgs {
                 list_tasks,
                 quiet_execution,
                 attach_stdin,
@@ -132,8 +109,7 @@ pub(crate) fn parse_commandline_args(
 }
 
 #[derive(Debug, Clone)]
-pub(crate) struct NurCliArgs {
-    // pub(crate) config_file: Option<Spanned<String>>,
+pub(crate) struct NurArgs {
     pub(crate) list_tasks: bool,
     pub(crate) quiet_execution: bool,
     pub(crate) attach_stdin: bool,

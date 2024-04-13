@@ -1,24 +1,24 @@
 mod args;
 mod commands;
 mod compat;
-mod defaults;
 mod engine;
 mod errors;
 mod names;
 mod nu_version;
 mod path;
+mod scripts;
 mod state;
 
 use crate::args::{gather_commandline_args, parse_commandline_args};
 use crate::commands::Nur;
 use crate::compat::show_nurscripts_hint;
-use crate::defaults::{get_default_nur_config, get_default_nur_env};
 use crate::engine::init_engine_state;
 use crate::errors::NurError;
 use crate::names::{
     NUR_ENV_NU_LIB_DIRS, NUR_NAME, NUR_VAR_CONFIG_DIR, NUR_VAR_DEFAULT_LIB_DIR,
     NUR_VAR_PROJECT_PATH, NUR_VAR_RUN_PATH, NUR_VAR_TASK_NAME,
 };
+use crate::scripts::{get_default_nur_config, get_default_nur_env};
 use crate::state::NurState;
 use engine::NurEngine;
 use miette::Result;
@@ -41,9 +41,10 @@ fn main() -> Result<ExitCode, miette::ErrReport> {
     // Setup nur engine
     let engine_state = init_engine_state(&nur_state.project_path)?;
     let mut nur_engine = NurEngine::from(engine_state);
+    let use_color = nur_engine.engine_state.get_config().use_ansi_coloring;
 
     // Parse args
-    let (args_to_nur, task_name, args_to_task) = gather_commandline_args();
+    let (args_to_nur, task_name, args_to_task) = gather_commandline_args(&mut env::args());
     let parsed_nur_args =
         parse_commandline_args(&args_to_nur.join(" "), &mut nur_engine.engine_state)
             .unwrap_or_else(|_| std::process::exit(1));
@@ -59,7 +60,7 @@ fn main() -> Result<ExitCode, miette::ErrReport> {
 
     // Show hints for compatibility issues
     if nur_state.has_project_path {
-        show_nurscripts_hint(&nur_state.project_path, nur_engine.use_color);
+        show_nurscripts_hint(&nur_state.project_path, use_color);
     }
 
     // Handle execution without project path, only allow to show help, abort otherwise
@@ -262,12 +263,12 @@ fn main() -> Result<ExitCode, miette::ErrReport> {
         if exit_code == 0 {
             println!(
                 "{}Task execution successful{}",
-                if nur_engine.use_color {
+                if use_color {
                     Color::Green.prefix().to_string()
                 } else {
                     String::from("")
                 },
-                if nur_engine.use_color {
+                if use_color {
                     Color::Green.suffix().to_string()
                 } else {
                     String::from("")
@@ -276,12 +277,12 @@ fn main() -> Result<ExitCode, miette::ErrReport> {
         } else {
             println!(
                 "{}Task execution failed{}",
-                if nur_engine.use_color {
+                if use_color {
                     Color::Red.prefix().to_string()
                 } else {
                     String::from("")
                 },
-                if nur_engine.use_color {
+                if use_color {
                     Color::Red.suffix().to_string()
                 } else {
                     String::from("")

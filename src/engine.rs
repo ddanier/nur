@@ -51,8 +51,6 @@ pub(crate) fn init_engine_state<P: AsRef<Path>>(project_path: P) -> NurResult<En
 pub(crate) struct NurEngine {
     pub(crate) engine_state: EngineState,
     pub(crate) stack: Stack,
-
-    pub(crate) use_color: bool,
 }
 
 impl NurEngine {
@@ -221,12 +219,9 @@ impl NurEngine {
 
 impl From<EngineState> for NurEngine {
     fn from(engine_state: EngineState) -> NurEngine {
-        let use_color = engine_state.get_config().use_ansi_coloring;
-
         NurEngine {
             engine_state,
             stack: Stack::new(),
-            use_color,
         }
     }
 }

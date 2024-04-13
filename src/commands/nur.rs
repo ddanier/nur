@@ -18,12 +18,6 @@ impl Command for Nur {
 
         signature = signature
             .usage("nur - a taskrunner based on nu shell.")
-            // .named(
-            //     "config",
-            //     SyntaxShape::String,
-            //     "path to config",
-            //     None,
-            // )
             .switch("version", "output version number and exit", None)
             .switch("list", "list available tasks and then just exit", None)
             .switch(
@@ -53,7 +47,7 @@ impl Command for Nur {
     }
 
     fn usage(&self) -> &str {
-        "nu run - simple task runner."
+        "nur - a taskrunner based on nu shell."
     }
 
     fn run(
