@@ -438,10 +438,3 @@ decided for just "nur" as:
 * `nur` is very fast to type (one less character 💪)
 * `nur` is the reverse of `run`, which I like as a side effect 🥳
 * and then as a nice and also weird side effect: You could translate "just" to "nur" in german 😂
-
-## Warning / disclaimer
-
-In its current state `nur` is more or less a **beta** software. I wanted to put it out there, so I may
-receive some feedback. But I am only just starting using this in some production setup myself.
-So feel free to poke around with this, but be aware this is far from being finished or anything.
-Meaning: There might be dragons!
