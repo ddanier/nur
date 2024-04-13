@@ -1,10 +1,20 @@
+use crate::args::{parse_commandline_args, NurArgs};
 use crate::errors::{NurError, NurResult};
+use crate::names::{
+    NUR_ENV_NU_LIB_DIRS, NUR_NAME, NUR_VAR_CONFIG_DIR, NUR_VAR_DEFAULT_LIB_DIR,
+    NUR_VAR_PROJECT_PATH, NUR_VAR_RUN_PATH, NUR_VAR_TASK_NAME,
+};
 use crate::nu_version::NU_VERSION;
+use crate::state::NurState;
 use nu_cli::gather_parent_env_vars;
 use nu_engine::get_full_help;
 use nu_protocol::ast::Block;
 use nu_protocol::engine::{Command, Stack, StateWorkingSet};
-use nu_protocol::{engine::EngineState, report_error, report_error_new, PipelineData, Span, Value};
+use nu_protocol::eval_const::create_nu_constant;
+use nu_protocol::{
+    engine::EngineState, report_error, report_error_new, PipelineData, Record, Span, Type, Value,
+    NU_VARIABLE_ID,
+};
 use nu_std::load_standard_library;
 use nu_utils::stdout_write_all_and_flush;
 use std::fs;
@@ -51,9 +61,98 @@ pub(crate) fn init_engine_state<P: AsRef<Path>>(project_path: P) -> NurResult<En
 pub(crate) struct NurEngine {
     pub(crate) engine_state: EngineState,
     pub(crate) stack: Stack,
+
+    pub(crate) state: NurState,
 }
 
 impl NurEngine {
+    pub(crate) fn new(engine_state: EngineState, nur_state: NurState) -> NurResult<NurEngine> {
+        let mut nur_engine = NurEngine {
+            engine_state,
+            stack: Stack::new(),
+
+            state: nur_state,
+        };
+
+        nur_engine._apply_nur_state()?;
+
+        Ok(nur_engine)
+    }
+
+    fn _apply_nur_state(&mut self) -> NurResult<()> {
+        // Set default scripts path
+        self.engine_state.add_env_var(
+            NUR_ENV_NU_LIB_DIRS.to_string(),
+            Value::test_string(self.state.lib_dir_path.to_string_lossy()),
+        );
+
+        // Set config and env paths to .nur versions
+        self.engine_state
+            .set_config_path("env-path", self.state.env_path.clone());
+        self.engine_state
+            .set_config_path("config-path", self.state.config_path.clone());
+
+        // Set up the $nu constant before evaluating any files (need to have $nu available in them)
+        let nu_const = create_nu_constant(
+            &self.engine_state,
+            PipelineData::empty().span().unwrap_or_else(Span::unknown),
+        )?;
+        self.engine_state
+            .set_variable_const_val(NU_VARIABLE_ID, nu_const);
+
+        // Set up the $nur constant record (like $nu)
+        let mut nur_record = Record::new();
+        nur_record.push(
+            NUR_VAR_RUN_PATH,
+            Value::string(
+                String::from(self.state.run_path.to_str().unwrap()),
+                Span::unknown(),
+            ),
+        );
+        nur_record.push(
+            NUR_VAR_PROJECT_PATH,
+            Value::string(
+                String::from(self.state.project_path.to_str().unwrap()),
+                Span::unknown(),
+            ),
+        );
+        nur_record.push(
+            NUR_VAR_TASK_NAME,
+            Value::string(&self.state.task_name, Span::unknown()),
+        );
+        nur_record.push(
+            NUR_VAR_CONFIG_DIR,
+            Value::string(
+                String::from(self.state.config_dir.to_str().unwrap()),
+                Span::unknown(),
+            ),
+        );
+        nur_record.push(
+            NUR_VAR_DEFAULT_LIB_DIR,
+            Value::string(
+                String::from(self.state.lib_dir_path.to_str().unwrap()),
+                Span::unknown(),
+            ),
+        );
+        let mut working_set = StateWorkingSet::new(&self.engine_state);
+        let nur_var_id = working_set.add_variable(
+            NUR_NAME.as_bytes().into(),
+            Span::unknown(),
+            Type::Any,
+            false,
+        );
+        self.stack
+            .add_var(nur_var_id, Value::record(nur_record, Span::unknown()));
+        self.engine_state.merge_delta(working_set.render())?;
+
+        Ok(())
+    }
+
+    pub(crate) fn parse_args(&mut self) -> NurArgs {
+        parse_commandline_args(&self.state.args_to_nur.join(" "), &mut self.engine_state)
+            .unwrap_or_else(|_| std::process::exit(1))
+    }
+
     fn _parse_nu_script(
         &mut self,
         file_path: Option<&str>,
@@ -214,14 +313,5 @@ impl NurEngine {
         );
 
         let _ = std::panic::catch_unwind(move || stdout_write_all_and_flush(full_help));
-    }
-}
-
-impl From<EngineState> for NurEngine {
-    fn from(engine_state: EngineState) -> NurEngine {
-        NurEngine {
-            engine_state,
-            stack: Stack::new(),
-        }
     }
 }
