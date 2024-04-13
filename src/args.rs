@@ -10,17 +10,17 @@ use nu_protocol::{
     ShellError,
 };
 use nu_utils::stdout_write_all_and_flush;
-use std::env::Args;
 
-pub(crate) fn gather_commandline_args(args: &mut Args) -> (Vec<String>, String, Vec<String>) {
-    let mut args_to_nur = Vec::from([NUR_NAME.into()]);
+pub(crate) fn gather_commandline_args(args: Vec<String>) -> (Vec<String>, String, Vec<String>) {
+    let mut args_to_nur = Vec::from([String::from(NUR_NAME)]);
     let mut task_name = String::new();
+    let mut args_iter = args.iter();
 
-    args.next(); // Ignore own name
+    args_iter.next(); // Ignore own name
     #[allow(clippy::while_let_on_iterator)]
-    while let Some(arg) = args.next() {
+    while let Some(arg) = args_iter.next() {
         if !arg.starts_with('-') {
-            task_name = arg;
+            task_name = arg.clone();
             break;
         }
 
@@ -29,7 +29,7 @@ pub(crate) fn gather_commandline_args(args: &mut Args) -> (Vec<String>, String, 
         //     _ => None,
         // };
 
-        args_to_nur.push(arg);
+        args_to_nur.push(arg.clone());
 
         // if let Some(flag_value) = flag_value {
         //     args_to_nur.push(flag_value);
@@ -37,7 +37,7 @@ pub(crate) fn gather_commandline_args(args: &mut Args) -> (Vec<String>, String, 
     }
 
     let args_to_task = if !task_name.is_empty() {
-        args.map(|arg| escape_for_script_arg(&arg)).collect()
+        args_iter.map(|arg| escape_for_script_arg(arg)).collect()
     } else {
         Vec::default()
     };

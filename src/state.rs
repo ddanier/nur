@@ -4,7 +4,6 @@ use crate::names::{
     NUR_FILE, NUR_LOCAL_FILE,
 };
 use crate::path::find_project_path;
-use std::env;
 use std::path::PathBuf;
 
 #[derive(Clone)]
@@ -27,7 +26,7 @@ pub(crate) struct NurState {
 }
 
 impl NurState {
-    pub(crate) fn new(run_path: PathBuf) -> Self {
+    pub(crate) fn new(run_path: PathBuf, args: Vec<String>) -> Self {
         // Get initial directory details
         let found_project_path = find_project_path(&run_path);
         let has_project_path = found_project_path.is_some();
@@ -41,7 +40,7 @@ impl NurState {
         let nurfile_path = project_path.join(NUR_FILE);
         let local_nurfile_path = project_path.join(NUR_LOCAL_FILE);
 
-        let (args_to_nur, task_name, args_to_task) = gather_commandline_args(&mut env::args());
+        let (args_to_nur, task_name, args_to_task) = gather_commandline_args(args);
 
         NurState {
             run_path,

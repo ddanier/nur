@@ -27,7 +27,7 @@ use std::process::ExitCode;
 fn main() -> Result<ExitCode, miette::ErrReport> {
     // Initialise nur state
     let run_path = get_init_cwd();
-    let nur_state = NurState::new(run_path);
+    let nur_state = NurState::new(run_path, env::args().collect());
 
     // Create raw nu engine state
     let engine_state = init_engine_state(&nur_state.project_path)?;
