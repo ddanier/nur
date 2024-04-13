@@ -1,4 +1,4 @@
-# nur Environment Config File
+# nur Environment File
 
 # Specifies how environment variables are:
 # - converted from a string to a value on Nushell startup (from_string)

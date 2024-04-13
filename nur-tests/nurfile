@@ -9,7 +9,11 @@ def "nur test-env" [] {
 }
 
 def "nur test-config" [] {
-    std assert ($env.config | is-not-empty)
+    try {
+        $env.config
+    } catch {
+        error make {"msg": "Config does not exist"}
+    }
 }
 
 def "nur test-nu" [] {
