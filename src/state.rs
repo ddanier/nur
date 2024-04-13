@@ -1,6 +1,6 @@
 use crate::args::gather_commandline_args;
 use crate::names::{
-    NUR_CONFIG_CONFIG_FILENAME, NUR_CONFIG_ENV_FILENAME, NUR_CONFIG_LIB_PATH, NUR_CONFIG_PATH,
+    NUR_CONFIG_CONFIG_FILENAME, NUR_CONFIG_DIR, NUR_CONFIG_ENV_FILENAME, NUR_CONFIG_LIB_PATH,
     NUR_FILE, NUR_LOCAL_FILE,
 };
 use crate::path::find_project_path;
@@ -33,7 +33,7 @@ impl NurState {
         let project_path = found_project_path.unwrap_or(run_path.clone());
 
         // Set all paths
-        let config_dir = project_path.join(NUR_CONFIG_PATH);
+        let config_dir = project_path.join(NUR_CONFIG_DIR);
         let lib_dir_path = config_dir.join(NUR_CONFIG_LIB_PATH);
         let env_path = config_dir.join(NUR_CONFIG_ENV_FILENAME);
         let config_path = config_dir.join(NUR_CONFIG_CONFIG_FILENAME);

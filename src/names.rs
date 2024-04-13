@@ -1,7 +1,7 @@
 pub(crate) const NUR_NAME: &str = "nur";
 
 // Config paths/files
-pub(crate) const NUR_CONFIG_PATH: &str = ".nur";
+pub(crate) const NUR_CONFIG_DIR: &str = ".nur";
 pub(crate) const NUR_CONFIG_LIB_PATH: &str = "scripts";
 pub(crate) const NUR_CONFIG_CONFIG_FILENAME: &str = "config.nu";
 pub(crate) const NUR_CONFIG_ENV_FILENAME: &str = "env.nu";

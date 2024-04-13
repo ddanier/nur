@@ -281,9 +281,11 @@ impl NurEngine {
         }
     }
 
-    // pub fn eval<S: ToString>(&mut self, contents: S, input: PipelineData) -> NurResult<i64> {
-    //     self._eval(None, contents, input, false, false)
-    // }
+    // This is used in tests only currently
+    #[allow(dead_code)]
+    pub fn eval<S: ToString>(&mut self, contents: S, input: PipelineData) -> NurResult<i64> {
+        self._eval(None, contents, input, false, false)
+    }
 
     pub(crate) fn eval_and_print<S: ToString>(
         &mut self,
@@ -345,5 +347,204 @@ impl NurEngine {
         );
 
         let _ = std::panic::catch_unwind(move || stdout_write_all_and_flush(full_help));
+    }
+}
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+    use crate::names::{
+        NUR_CONFIG_CONFIG_FILENAME, NUR_CONFIG_DIR, NUR_CONFIG_ENV_FILENAME, NUR_CONFIG_LIB_PATH,
+        NUR_FILE, NUR_LOCAL_FILE,
+    };
+    use std::fs::File;
+    use std::io::Write;
+    use tempfile::{tempdir, TempDir};
+
+    fn _has_decl<S: AsRef<str>>(engine_state: &mut EngineState, name: S) -> bool {
+        engine_state
+            .find_decl(name.as_ref().as_bytes(), &[])
+            .is_some()
+    }
+
+    #[test]
+    fn test_init_engine_state_will_add_commands() {
+        let temp_dir = tempdir().unwrap();
+        let temp_dir_path = temp_dir.path().to_path_buf();
+        let mut engine_state = init_engine_state(&temp_dir_path).unwrap();
+
+        assert!(_has_decl(&mut engine_state, "alias"));
+        assert!(_has_decl(&mut engine_state, "do"));
+        assert!(_has_decl(&mut engine_state, "uniq"));
+        assert!(_has_decl(&mut engine_state, "help"));
+        assert!(_has_decl(&mut engine_state, "str"));
+        assert!(_has_decl(&mut engine_state, "format pattern"));
+        assert!(_has_decl(&mut engine_state, "history"));
+        assert!(_has_decl(&mut engine_state, "explore"));
+        assert!(_has_decl(&mut engine_state, "print"));
+        assert!(_has_decl(&mut engine_state, "nu-highlight"));
+        assert!(_has_decl(&mut engine_state, "nur"));
+    }
+
+    #[test]
+    fn test_init_engine_state_will_set_nu_version() {
+        let temp_dir = tempdir().unwrap();
+        let temp_dir_path = temp_dir.path().to_path_buf();
+        let engine_state = init_engine_state(&temp_dir_path).unwrap();
+
+        assert!(engine_state.get_env_var("NU_VERSION").is_some());
+    }
+
+    #[test]
+    fn test_init_engine_state_will_add_std_lib() {
+        let temp_dir = tempdir().unwrap();
+        let temp_dir_path = temp_dir.path().to_path_buf();
+        let engine_state = init_engine_state(&temp_dir_path).unwrap();
+
+        assert!(engine_state
+            .find_module("std".as_bytes(), &[vec![]],)
+            .is_some());
+    }
+
+    #[test]
+    fn test_init_engine_state_will_set_flags() {
+        let temp_dir = tempdir().unwrap();
+        let temp_dir_path = temp_dir.path().to_path_buf();
+        let engine_state = init_engine_state(&temp_dir_path).unwrap();
+
+        assert_eq!(engine_state.is_interactive, false);
+        assert_eq!(engine_state.is_login, false);
+        assert_eq!(engine_state.history_enabled, false);
+    }
+
+    fn _prepare_nur_engine(temp_dir: &TempDir) -> NurEngine {
+        let temp_dir_path = temp_dir.path().to_path_buf();
+        let nurfile_path = temp_dir.path().join(NUR_FILE);
+        File::create(&nurfile_path).unwrap();
+
+        let args = vec![String::from("nur"), String::from("some_task")];
+        let nur_state = NurState::new(temp_dir_path.clone(), args);
+        let engine_state = init_engine_state(temp_dir_path).unwrap();
+
+        NurEngine::new(engine_state, nur_state).unwrap()
+    }
+
+    fn _cleanup_nur_engine(temp_dir: &TempDir) {
+        let nurfile_path = temp_dir.path().join(NUR_FILE);
+        let nurfile_local_path = temp_dir.path().join(NUR_FILE);
+        let config_dir = temp_dir.path().join(NUR_CONFIG_DIR);
+
+        fs::remove_file(nurfile_path).unwrap();
+        if nurfile_local_path.exists() {
+            fs::remove_file(nurfile_local_path).unwrap();
+        }
+        if config_dir.exists() {
+            fs::remove_dir_all(config_dir).unwrap();
+        }
+    }
+
+    fn _has_var<S: AsRef<str>>(nur_engine: &mut NurEngine, name: S) -> bool {
+        let name = name.as_ref();
+        let dollar_name = format!("${name}");
+        let var_id = nur_engine
+            .engine_state
+            .active_overlays(&vec![])
+            .find_map(|o| {
+                o.vars
+                    .get(dollar_name.as_bytes())
+                    .or(o.vars.get(name.as_bytes()))
+            })
+            .unwrap();
+
+        nur_engine.stack.get_var(*var_id, Span::unknown()).is_ok()
+    }
+
+    #[test]
+    fn test_nur_engine_will_set_nur_variable() {
+        let temp_dir = tempdir().unwrap();
+        let mut nur_engine = _prepare_nur_engine(&temp_dir);
+
+        assert!(_has_var(&mut nur_engine, "nur"));
+
+        _cleanup_nur_engine(&temp_dir);
+    }
+
+    #[test]
+    fn test_nur_engine_will_load_nurfiles() {
+        let temp_dir = tempdir().unwrap();
+        let mut nur_engine = _prepare_nur_engine(&temp_dir);
+
+        let nurfile_path = temp_dir.path().join(NUR_FILE);
+        let mut nurfile = File::create(&nurfile_path).unwrap();
+        nurfile.write_all(b"def nurfile-command [] {}").unwrap();
+        let nurfile_local_path = temp_dir.path().join(NUR_LOCAL_FILE);
+        let mut nurfile_local = File::create(&nurfile_local_path).unwrap();
+        nurfile_local
+            .write_all(b"def nurfile-local-command [] {}")
+            .unwrap();
+
+        nur_engine.load_env().unwrap();
+        nur_engine.load_config().unwrap();
+        nur_engine.load_nurfiles().unwrap();
+
+        assert!(_has_decl(&mut nur_engine.engine_state, "nurfile-command"));
+        assert!(_has_decl(
+            &mut nur_engine.engine_state,
+            "nurfile-local-command"
+        ));
+
+        _cleanup_nur_engine(&temp_dir);
+    }
+
+    #[test]
+    fn test_nur_engine_will_load_env_and_config() {
+        let temp_dir = tempdir().unwrap();
+        let mut nur_engine = _prepare_nur_engine(&temp_dir);
+
+        let config_dir = temp_dir.path().join(NUR_CONFIG_DIR);
+        fs::create_dir(config_dir.clone()).unwrap();
+        let env_path = config_dir.join(NUR_CONFIG_ENV_FILENAME);
+        let mut env_file = File::create(&env_path).unwrap();
+        env_file.write_all(b"def env-command [] {}").unwrap();
+        let config_path = config_dir.join(NUR_CONFIG_CONFIG_FILENAME);
+        let mut config_file = File::create(&config_path).unwrap();
+        config_file.write_all(b"def config-command [] {}").unwrap();
+
+        nur_engine.load_env().unwrap();
+        nur_engine.load_config().unwrap();
+        nur_engine.load_nurfiles().unwrap();
+
+        assert!(_has_decl(&mut nur_engine.engine_state, "env-command"));
+        assert!(_has_decl(&mut nur_engine.engine_state, "config-command"));
+
+        _cleanup_nur_engine(&temp_dir);
+    }
+
+    #[test]
+    fn test_nur_engine_will_allow_scripts() {
+        let temp_dir = tempdir().unwrap();
+        let mut nur_engine = _prepare_nur_engine(&temp_dir);
+
+        let config_dir = temp_dir.path().join(NUR_CONFIG_DIR);
+        fs::create_dir(config_dir.clone()).unwrap();
+        let scripts_dir = config_dir.join(NUR_CONFIG_LIB_PATH);
+        fs::create_dir(scripts_dir.clone()).unwrap();
+        let module_path = scripts_dir.join("test-module.nu");
+        let mut module_file = File::create(&module_path).unwrap();
+        module_file
+            .write_all(b"export def module-command [] {}")
+            .unwrap();
+
+        nur_engine.load_env().unwrap();
+        nur_engine.load_config().unwrap();
+        nur_engine.load_nurfiles().unwrap();
+
+        nur_engine
+            .eval("use test-module.nu *", PipelineData::empty())
+            .unwrap();
+
+        assert!(_has_decl(&mut nur_engine.engine_state, "module-command"));
+
+        _cleanup_nur_engine(&temp_dir);
     }
 }

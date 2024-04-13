@@ -121,9 +121,8 @@ pub(crate) struct NurArgs {
 #[cfg(test)]
 mod tests {
     use super::*;
-    use crate::commands::create_nur_context;
     use crate::engine::init_engine_state;
-    use nu_cmd_base::util::get_init_cwd;
+    use tempfile::tempdir;
 
     #[test]
     fn test_gather_commandline_args_splits_on_task_name() {
@@ -192,9 +191,9 @@ mod tests {
     }
 
     fn _create_minimal_engine_for_erg_parsing() -> EngineState {
-        let init_cwd = get_init_cwd();
-        let engine_state = init_engine_state(&init_cwd).unwrap();
-        let engine_state = create_nur_context(engine_state);
+        let temp_dir = tempdir().unwrap();
+        let temp_dir_path = temp_dir.path().to_path_buf();
+        let engine_state = init_engine_state(&temp_dir_path).unwrap();
 
         engine_state
     }
