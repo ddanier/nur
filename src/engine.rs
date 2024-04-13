@@ -5,6 +5,7 @@ use crate::names::{
     NUR_VAR_PROJECT_PATH, NUR_VAR_RUN_PATH, NUR_VAR_TASK_NAME,
 };
 use crate::nu_version::NU_VERSION;
+use crate::scripts::{get_default_nur_config, get_default_nur_env};
 use crate::state::NurState;
 use nu_cli::gather_parent_env_vars;
 use nu_engine::get_full_help;
@@ -151,6 +152,37 @@ impl NurEngine {
     pub(crate) fn parse_args(&mut self) -> NurArgs {
         parse_commandline_args(&self.state.args_to_nur.join(" "), &mut self.engine_state)
             .unwrap_or_else(|_| std::process::exit(1))
+    }
+
+    pub(crate) fn load_env(&mut self) -> NurResult<()> {
+        if self.state.env_path.exists() {
+            self.source_and_merge_env(self.state.env_path.clone(), PipelineData::empty())?;
+        } else {
+            self.eval_and_merge_env(get_default_nur_env(), PipelineData::empty())?;
+        }
+
+        Ok(())
+    }
+
+    pub(crate) fn load_config(&mut self) -> NurResult<()> {
+        if self.state.config_path.exists() {
+            self.source_and_merge_env(self.state.config_path.clone(), PipelineData::empty())?;
+        } else {
+            self.eval_and_merge_env(get_default_nur_config(), PipelineData::empty())?;
+        }
+
+        Ok(())
+    }
+
+    pub(crate) fn load_nurfiles(&mut self) -> NurResult<()> {
+        if self.state.nurfile_path.exists() {
+            self.source(self.state.nurfile_path.clone(), PipelineData::empty())?;
+        }
+        if self.state.local_nurfile_path.exists() {
+            self.source(self.state.local_nurfile_path.clone(), PipelineData::empty())?;
+        }
+
+        Ok(())
     }
 
     fn _parse_nu_script(

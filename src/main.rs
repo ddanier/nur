@@ -14,7 +14,6 @@ use crate::compat::show_nurscripts_hint;
 use crate::engine::init_engine_state;
 use crate::errors::NurError;
 use crate::names::NUR_NAME;
-use crate::scripts::{get_default_nur_config, get_default_nur_env};
 use crate::state::NurState;
 use engine::NurEngine;
 use miette::Result;
@@ -42,11 +41,29 @@ fn main() -> Result<ExitCode, miette::ErrReport> {
 
     #[cfg(feature = "debug")]
     if parsed_nur_args.debug_output {
+        eprintln!("run path: {:?}", nur_engine.state.run_path);
+        eprintln!("project path: {:?}", nur_engine.state.project_path);
+        eprintln!();
         eprintln!("nur args: {:?}", parsed_nur_args);
         eprintln!("task name: {:?}", nur_engine.state.task_name);
         eprintln!("task args: {:?}", nur_engine.state.args_to_task);
-        eprintln!("run path: {:?}", nur_engine.state.run_path);
-        eprintln!("project path: {:?}", nur_engine.state.project_path);
+        eprintln!();
+        eprintln!("nur config dir: {:?}", nur_engine.state.config_dir);
+        eprintln!(
+            "nur lib path (scripts/): {:?}",
+            nur_engine.state.lib_dir_path
+        );
+        eprintln!("nur env path (env.nu): {:?}", nur_engine.state.env_path);
+        eprintln!(
+            "nur config path (config.nu): {:?}",
+            nur_engine.state.config_path
+        );
+        eprintln!();
+        eprintln!("nurfile path: {:?}", nur_engine.state.nurfile_path);
+        eprintln!(
+            "nurfile local path: {:?}",
+            nur_engine.state.local_nurfile_path
+        );
     }
 
     // Show hints for compatibility issues
@@ -65,42 +82,12 @@ fn main() -> Result<ExitCode, miette::ErrReport> {
         }
     }
 
-    // Base path for nur config/env
-    #[cfg(feature = "debug")]
-    if parsed_nur_args.debug_output {
-        eprintln!("nur config dir: {:?}", nur_state.config_dir);
-        eprintln!("nur lib path (scripts): {:?}", nur_state.lib_dir_path);
-    }
-
     // Load env and config
-    if nur_engine.state.env_path.exists() {
-        nur_engine
-            .source_and_merge_env(&nur_engine.state.env_path.clone(), PipelineData::empty())?;
-    } else {
-        nur_engine.eval_and_merge_env(get_default_nur_env(), PipelineData::empty())?;
-    }
-    if nur_engine.state.config_path.exists() {
-        nur_engine
-            .source_and_merge_env(&nur_engine.state.config_path.clone(), PipelineData::empty())?;
-    } else {
-        nur_engine.eval_and_merge_env(get_default_nur_config(), PipelineData::empty())?;
-    }
+    nur_engine.load_env()?;
+    nur_engine.load_config()?;
 
     // Load task files
-    #[cfg(feature = "debug")]
-    if parsed_nur_args.debug_output {
-        eprintln!("nurfile path: {:?}", nur_state.nurfile_path);
-        eprintln!("nurfile local path: {:?}", nur_state.local_nurfile_path);
-    }
-    if nur_engine.state.nurfile_path.exists() {
-        nur_engine.source(nur_engine.state.nurfile_path.clone(), PipelineData::empty())?;
-    }
-    if nur_engine.state.local_nurfile_path.exists() {
-        nur_engine.source(
-            nur_engine.state.local_nurfile_path.clone(),
-            PipelineData::empty(),
-        )?;
-    }
+    nur_engine.load_nurfiles()?;
 
     // Handle list tasks
     if parsed_nur_args.list_tasks {
