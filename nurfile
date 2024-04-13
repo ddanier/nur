@@ -41,7 +41,7 @@ def "nur test" [
     --coverage
 ] {
     if $coverage {
-        cargo tarpaulin
+        cargo tarpaulin --exclude-files _*
     } else {
         cargo test
     }

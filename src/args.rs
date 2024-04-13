@@ -1,8 +1,8 @@
 use crate::commands::Nur;
 use crate::names::NUR_NAME;
 use nu_engine::{get_full_help, CallExt};
+use nu_parser::escape_for_script_arg;
 use nu_parser::parse;
-use nu_parser::{escape_for_script_arg, escape_quote_string};
 use nu_protocol::report_error;
 use nu_protocol::{
     ast::Expr,
@@ -11,32 +11,33 @@ use nu_protocol::{
 };
 use nu_utils::stdout_write_all_and_flush;
 
-pub(crate) fn gather_commandline_args() -> (Vec<String>, String, Vec<String>) {
-    let mut args_to_nur = Vec::from([NUR_NAME.into()]);
+pub(crate) fn gather_commandline_args(args: Vec<String>) -> (Vec<String>, String, Vec<String>) {
+    let mut args_to_nur = Vec::from([String::from(NUR_NAME)]);
     let mut task_name = String::new();
-    let mut args = std::env::args();
+    let mut args_iter = args.iter();
 
-    args.next(); // Ignore own name
-    while let Some(arg) = args.next() {
+    args_iter.next(); // Ignore own name
+    #[allow(clippy::while_let_on_iterator)]
+    while let Some(arg) = args_iter.next() {
         if !arg.starts_with('-') {
-            task_name = arg;
+            task_name = arg.clone();
             break;
         }
 
-        let flag_value = match arg.as_ref() {
-            "--config" => args.next().map(|a| escape_quote_string(&a)),
-            _ => None,
-        };
+        // let flag_value = match arg.as_ref() {
+        //     // "--some-file" => args.next().map(|a| escape_quote_string(&a)),
+        //     _ => None,
+        // };
 
-        args_to_nur.push(arg);
+        args_to_nur.push(arg.clone());
 
-        if let Some(flag_value) = flag_value {
-            args_to_nur.push(flag_value);
-        }
+        // if let Some(flag_value) = flag_value {
+        //     args_to_nur.push(flag_value);
+        // }
     }
 
     let args_to_task = if !task_name.is_empty() {
-        args.map(|arg| escape_for_script_arg(&arg)).collect()
+        args_iter.map(|arg| escape_for_script_arg(arg)).collect()
     } else {
         Vec::default()
     };
@@ -46,10 +47,9 @@ pub(crate) fn gather_commandline_args() -> (Vec<String>, String, Vec<String>) {
 pub(crate) fn parse_commandline_args(
     commandline_args: &str,
     engine_state: &mut EngineState,
-) -> Result<NurCliArgs, ShellError> {
+) -> Result<NurArgs, ShellError> {
     let (block, delta) = {
         let mut working_set = StateWorkingSet::new(engine_state);
-        working_set.add_decl(Box::new(Nur));
 
         let output = parse(&mut working_set, None, commandline_args.as_bytes(), false);
         if let Some(err) = working_set.parse_errors.first() {
@@ -58,7 +58,6 @@ pub(crate) fn parse_commandline_args(
             std::process::exit(1);
         }
 
-        working_set.hide_decl(NUR_NAME.as_bytes());
         (output, working_set.render())
     };
 
@@ -77,29 +76,6 @@ pub(crate) fn parse_commandline_args(
             #[cfg(feature = "debug")]
             let debug_output = call.has_flag(engine_state, &mut stack, "debug")?;
 
-            // fn extract_contents(
-            //     expression: Option<&Expression>,
-            // ) -> Result<Option<Spanned<String>>, ShellError> {
-            //     if let Some(expr) = expression {
-            //         let str = expr.as_string();
-            //         if let Some(str) = str {
-            //             Ok(Some(Spanned {
-            //                 item: str,
-            //                 span: expr.span,
-            //             }))
-            //         } else {
-            //             Err(ShellError::TypeMismatch {
-            //                 err_message: "string".into(),
-            //                 span: expr.span,
-            //             })
-            //         }
-            //     } else {
-            //         Ok(None)
-            //     }
-            // }
-            //
-            // let config_file = extract_contents(config_file)?;
-
             if call.has_flag(engine_state, &mut stack, "version")? {
                 let version = env!("CARGO_PKG_VERSION").to_string();
                 let _ = std::panic::catch_unwind(move || {
@@ -109,8 +85,7 @@ pub(crate) fn parse_commandline_args(
                 std::process::exit(0);
             }
 
-            return Ok(NurCliArgs {
-                // config_file,
+            return Ok(NurArgs {
                 list_tasks,
                 quiet_execution,
                 attach_stdin,
@@ -134,12 +109,147 @@ pub(crate) fn parse_commandline_args(
 }
 
 #[derive(Debug, Clone)]
-pub(crate) struct NurCliArgs {
-    // pub(crate) config_file: Option<Spanned<String>>,
+pub(crate) struct NurArgs {
     pub(crate) list_tasks: bool,
     pub(crate) quiet_execution: bool,
     pub(crate) attach_stdin: bool,
     pub(crate) show_help: bool,
     #[cfg(feature = "debug")]
     pub(crate) debug_output: bool,
+}
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+    use crate::engine::init_engine_state;
+    use tempfile::tempdir;
+
+    #[test]
+    fn test_gather_commandline_args_splits_on_task_name() {
+        let args = vec![
+            String::from("nur"),
+            String::from("--quiet"),
+            String::from("some_task_name"),
+            String::from("--task-option"),
+            String::from("task-value"),
+        ];
+        let (nur_args, task_name, task_args) = gather_commandline_args(args);
+        assert_eq!(nur_args, vec![String::from("nur"), String::from("--quiet")]);
+        assert_eq!(task_name, "some_task_name");
+        assert_eq!(
+            task_args,
+            vec![String::from("--task-option"), String::from("task-value")]
+        );
+    }
+
+    #[test]
+    fn test_gather_commandline_args_handles_missing_nur_args() {
+        let args = vec![
+            String::from("nur"),
+            String::from("some_task_name"),
+            String::from("--task-option"),
+            String::from("task-value"),
+        ];
+        let (nur_args, task_name, task_args) = gather_commandline_args(args);
+        assert_eq!(nur_args, vec![String::from("nur")]);
+        assert_eq!(task_name, "some_task_name");
+        assert_eq!(
+            task_args,
+            vec![String::from("--task-option"), String::from("task-value")]
+        );
+    }
+
+    #[test]
+    fn test_gather_commandline_args_handles_missing_task_name() {
+        let args = vec![String::from("nur"), String::from("--help")];
+        let (nur_args, task_name, task_args) = gather_commandline_args(args);
+        assert_eq!(nur_args, vec![String::from("nur"), String::from("--help")]);
+        assert_eq!(task_name, "");
+        assert_eq!(task_args, vec![] as Vec<String>);
+    }
+
+    #[test]
+    fn test_gather_commandline_args_handles_missing_task_args() {
+        let args = vec![
+            String::from("nur"),
+            String::from("--quiet"),
+            String::from("some_task_name"),
+        ];
+        let (nur_args, task_name, task_args) = gather_commandline_args(args);
+        assert_eq!(nur_args, vec![String::from("nur"), String::from("--quiet")]);
+        assert_eq!(task_name, "some_task_name");
+        assert_eq!(task_args, vec![] as Vec<String>);
+    }
+
+    #[test]
+    fn test_gather_commandline_args_handles_no_args_at_all() {
+        let args = vec![String::from("nur")];
+        let (nur_args, task_name, task_args) = gather_commandline_args(args);
+        assert_eq!(nur_args, vec![String::from("nur")]);
+        assert_eq!(task_name, "");
+        assert_eq!(task_args, vec![] as Vec<String>);
+    }
+
+    fn _create_minimal_engine_for_erg_parsing() -> EngineState {
+        let temp_dir = tempdir().unwrap();
+        let temp_dir_path = temp_dir.path().to_path_buf();
+        let engine_state = init_engine_state(&temp_dir_path).unwrap();
+
+        engine_state
+    }
+
+    #[test]
+    fn test_parse_commandline_args_without_args() {
+        let mut engine_state = _create_minimal_engine_for_erg_parsing();
+
+        let nur_args = parse_commandline_args("nur", &mut engine_state).unwrap();
+        assert_eq!(nur_args.list_tasks, false);
+        assert_eq!(nur_args.quiet_execution, false);
+        assert_eq!(nur_args.attach_stdin, false);
+        assert_eq!(nur_args.show_help, false);
+    }
+
+    #[test]
+    fn test_parse_commandline_args_list() {
+        let mut engine_state = _create_minimal_engine_for_erg_parsing();
+
+        let nur_args = parse_commandline_args("nur --list", &mut engine_state).unwrap();
+        assert_eq!(nur_args.list_tasks, true);
+        assert_eq!(nur_args.quiet_execution, false);
+        assert_eq!(nur_args.attach_stdin, false);
+        assert_eq!(nur_args.show_help, false);
+    }
+
+    #[test]
+    fn test_parse_commandline_args_quiet() {
+        let mut engine_state = _create_minimal_engine_for_erg_parsing();
+
+        let nur_args = parse_commandline_args("nur --quiet", &mut engine_state).unwrap();
+        assert_eq!(nur_args.list_tasks, false);
+        assert_eq!(nur_args.quiet_execution, true);
+        assert_eq!(nur_args.attach_stdin, false);
+        assert_eq!(nur_args.show_help, false);
+    }
+
+    #[test]
+    fn test_parse_commandline_args_stdin() {
+        let mut engine_state = _create_minimal_engine_for_erg_parsing();
+
+        let nur_args = parse_commandline_args("nur --stdin", &mut engine_state).unwrap();
+        assert_eq!(nur_args.list_tasks, false);
+        assert_eq!(nur_args.quiet_execution, false);
+        assert_eq!(nur_args.attach_stdin, true);
+        assert_eq!(nur_args.show_help, false);
+    }
+
+    #[test]
+    fn test_parse_commandline_args_help() {
+        let mut engine_state = _create_minimal_engine_for_erg_parsing();
+
+        let nur_args = parse_commandline_args("nur --help", &mut engine_state).unwrap();
+        assert_eq!(nur_args.list_tasks, false);
+        assert_eq!(nur_args.quiet_execution, false);
+        assert_eq!(nur_args.attach_stdin, false);
+        assert_eq!(nur_args.show_help, true);
+    }
 }

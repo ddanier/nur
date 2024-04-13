@@ -1,9 +1,9 @@
 use nu_ansi_term::Color;
 use std::path::Path;
 
-pub(crate) fn show_nurscripts_hint(project_path: &Path, use_color: bool) {
+pub(crate) fn show_nurscripts_hint<P: AsRef<Path>>(project_path: P, use_color: bool) {
     // Give some hints if old ".nurscripts" exists
-    let old_nur_lib_path = project_path.join(".nurscripts");
+    let old_nur_lib_path = project_path.as_ref().join(".nurscripts");
     if old_nur_lib_path.exists() && old_nur_lib_path.is_dir() {
         eprintln!(
             "{}WARNING: .nurscripts/ has moved to .nur/scripts/ -> please update your project{}",

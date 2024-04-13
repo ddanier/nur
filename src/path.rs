@@ -1,13 +1,13 @@
 use crate::names::NUR_FILE;
-use std::path::Path;
+use std::path::{Path, PathBuf};
 
-pub(crate) fn find_project_path(cwd: &Path) -> Option<&Path> {
-    let mut path = cwd;
+pub(crate) fn find_project_path<P: AsRef<Path>>(cwd: P) -> Option<PathBuf> {
+    let mut path = cwd.as_ref();
 
     loop {
         let taskfile_path = path.join(NUR_FILE);
         if taskfile_path.exists() {
-            return Some(path);
+            return Some(path.to_path_buf());
         }
 
         if let Some(parent) = path.parent() {
