@@ -21,8 +21,8 @@ pub(crate) struct NurState {
     pub(crate) local_nurfile_path: PathBuf,
 
     pub(crate) args_to_nur: Vec<String>,
-    pub(crate) task_name: String,
-    pub(crate) args_to_task: Vec<String>,
+    pub(crate) has_task_call: bool,
+    pub(crate) task_and_args: Vec<String>,
 }
 
 impl NurState {
@@ -43,7 +43,7 @@ impl NurState {
         let local_nurfile_path = project_path.join(NUR_LOCAL_FILE);
 
         // Parse args into bits
-        let (args_to_nur, task_name, args_to_task) = gather_commandline_args(args);
+        let (args_to_nur, has_task_call, task_and_args) = gather_commandline_args(args);
 
         NurState {
             run_path,
@@ -59,8 +59,8 @@ impl NurState {
             local_nurfile_path,
 
             args_to_nur,
-            task_name,
-            args_to_task,
+            has_task_call,
+            task_and_args,
         }
     }
 }
@@ -107,8 +107,15 @@ mod tests {
             state.args_to_nur,
             vec![String::from("nur"), String::from("--quiet"),]
         );
-        assert_eq!(state.task_name, "some_task");
-        assert_eq!(state.args_to_task, vec![String::from("task_arg"),]);
+        assert_eq!(state.has_task_call, true);
+        assert_eq!(
+            state.task_and_args,
+            vec![
+                String::from("nur"),
+                String::from("some_task"),
+                String::from("task_arg")
+            ]
+        );
 
         // Clean up
         std::fs::remove_file(nurfile_path).unwrap();
@@ -148,7 +155,47 @@ mod tests {
             state.args_to_nur,
             vec![String::from("nur"), String::from("--quiet"),]
         );
-        assert_eq!(state.task_name, "some_task");
-        assert_eq!(state.args_to_task, vec![String::from("task_arg"),]);
+        assert_eq!(state.has_task_call, true);
+        assert_eq!(
+            state.task_and_args,
+            vec![
+                String::from("nur"),
+                String::from("some_task"),
+                String::from("task_arg")
+            ]
+        );
+    }
+
+    #[test]
+    fn test_nur_state_without_task() {
+        let temp_dir = tempdir().unwrap();
+        let temp_dir_path = temp_dir.path().to_path_buf();
+
+        // Setup test
+        let args = vec![String::from("nur"), String::from("--help")];
+        let state = NurState::new(temp_dir_path.clone(), args);
+
+        // Check everything works out
+        assert_eq!(state.run_path, temp_dir_path);
+        assert_eq!(state.project_path, temp_dir_path); // same as run_path, as this is the fallback
+        assert_eq!(state.has_project_path, false);
+
+        assert_eq!(state.config_dir, temp_dir_path.join(".nur"));
+        assert_eq!(state.lib_dir_path, temp_dir_path.join(".nur/scripts"));
+        assert_eq!(state.env_path, temp_dir_path.join(".nur/env.nu"));
+        assert_eq!(state.config_path, temp_dir_path.join(".nur/config.nu"));
+
+        assert_eq!(state.nurfile_path, temp_dir_path.join("nurfile"));
+        assert_eq!(
+            state.local_nurfile_path,
+            temp_dir_path.join("nurfile.local")
+        );
+
+        assert_eq!(
+            state.args_to_nur,
+            vec![String::from("nur"), String::from("--help"),]
+        );
+        assert_eq!(state.has_task_call, false);
+        assert_eq!(state.task_and_args, vec![] as Vec<String>);
     }
 }

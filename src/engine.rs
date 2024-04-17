@@ -117,10 +117,10 @@ impl NurEngine {
                 Span::unknown(),
             ),
         );
-        nur_record.push(
-            NUR_VAR_TASK_NAME,
-            Value::string(&self.state.task_name, Span::unknown()),
-        );
+        // nur_record.push(
+        //     NUR_VAR_TASK_NAME,
+        //     Value::string(&self.state.task_name, Span::unknown()),
+        // );
         nur_record.push(
             NUR_VAR_CONFIG_DIR,
             Value::string(

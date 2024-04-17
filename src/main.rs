@@ -14,7 +14,6 @@ use crate::compat::show_nurscripts_hint;
 use crate::engine::init_engine_state;
 use crate::engine::NurEngine;
 use crate::errors::NurError;
-use crate::names::NUR_NAME;
 use crate::state::NurState;
 use miette::Result;
 use nu_ansi_term::Color;
@@ -45,8 +44,7 @@ fn main() -> Result<ExitCode, miette::ErrReport> {
         eprintln!("project path: {:?}", nur_engine.state.project_path);
         eprintln!();
         eprintln!("nur args: {:?}", parsed_nur_args);
-        eprintln!("task name: {:?}", nur_engine.state.task_name);
-        eprintln!("task args: {:?}", nur_engine.state.args_to_task);
+        eprintln!("task call: {:?}", nur_engine.state.task_and_args);
         eprintln!();
         eprintln!("nur config dir: {:?}", nur_engine.state.config_dir);
         eprintln!(
@@ -101,33 +99,33 @@ fn main() -> Result<ExitCode, miette::ErrReport> {
     }
 
     // Initialize internal data
-    let task_def_name = format!("{} {}", NUR_NAME, nur_engine.state.task_name);
-    #[cfg(feature = "debug")]
-    if parsed_nur_args.debug_output {
-        eprintln!("task def name: {}", task_def_name);
-    }
+    // let task_def_name = format!("{} {}", NUR_NAME, nur_engine.state.task_name);
+    // #[cfg(feature = "debug")]
+    // if parsed_nur_args.debug_output {
+    //     eprintln!("task def name: {}", task_def_name);
+    // }
 
     // Handle help
-    if parsed_nur_args.show_help || nur_engine.state.task_name.is_empty() {
-        if nur_engine.state.task_name.is_empty() {
-            nur_engine.print_help(&Nur);
-        } else if let Some(command) = nur_engine.get_def(task_def_name) {
-            nur_engine.clone().print_help(command);
-        } else {
-            return Err(miette::ErrReport::from(NurError::TaskNotFound(
-                nur_engine.state.task_name,
-            )));
-        }
-
-        std::process::exit(0);
-    }
+    // if parsed_nur_args.show_help || nur_engine.state.task_name.is_empty() {
+    //     if nur_engine.state.task_name.is_empty() {
+    //         nur_engine.print_help(&Nur);
+    //     } else if let Some(command) = nur_engine.get_def(task_def_name) {
+    //         nur_engine.clone().print_help(command);
+    //     } else {
+    //         return Err(miette::ErrReport::from(NurError::TaskNotFound(
+    //             nur_engine.state.task_name,
+    //         )));
+    //     }
+    //
+    //     std::process::exit(0);
+    // }
 
     // Check if requested task exists
-    if !nur_engine.has_def(&task_def_name) {
-        return Err(miette::ErrReport::from(NurError::TaskNotFound(
-            nur_engine.state.task_name,
-        )));
-    }
+    // if !nur_engine.has_def(&task_def_name) {
+    //     return Err(miette::ErrReport::from(NurError::TaskNotFound(
+    //         nur_engine.state.task_and_args[1].clone(),  // TODO: Use real task name
+    //     )));
+    // }
 
     // Prepare input data - if requested
     let input = if parsed_nur_args.attach_stdin {
@@ -153,11 +151,7 @@ fn main() -> Result<ExitCode, miette::ErrReport> {
 
     // Execute the task
     let exit_code: i64;
-    let full_task_call = format!(
-        "{} {}",
-        task_def_name,
-        nur_engine.state.args_to_task.join(" ")
-    );
+    let full_task_call = nur_engine.state.task_and_args.join(" ");
     #[cfg(feature = "debug")]
     if parsed_nur_args.debug_output {
         eprintln!("full task call: {}", full_task_call);
@@ -172,7 +166,7 @@ fn main() -> Result<ExitCode, miette::ErrReport> {
     } else {
         println!("nur version {}", env!("CARGO_PKG_VERSION"));
         println!("Project path {:?}", nur_engine.state.project_path);
-        println!("Executing task {}", nur_engine.state.task_name);
+        println!("Executing task {}", nur_engine.state.task_and_args[1]); // TODO: Use real task name
         println!();
         exit_code = nur_engine.eval_and_print(full_task_call, input)?;
         #[cfg(feature = "debug")]
