@@ -109,8 +109,8 @@ fn main() -> Result<ExitCode, miette::ErrReport> {
         }
     }
 
-    // Find full task name
-    if !nur_engine.find_task_name() {
+    // Ensure we have a task name
+    if nur_engine.task_name.is_none() {
         return Err(miette::ErrReport::from(NurError::TaskNotFound(
             nur_engine.state.task_call[1].clone(),
         )));

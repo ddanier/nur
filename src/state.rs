@@ -86,7 +86,7 @@ mod tests {
             String::from("some_task"),
             String::from("task_arg"),
         ];
-        let state = NurState::new(temp_dir_path.clone(), args);
+        let state = NurState::new(temp_dir_path.clone(), args).unwrap();
 
         // Check everything works out
         assert_eq!(state.run_path, temp_dir_path);
@@ -134,7 +134,7 @@ mod tests {
             String::from("some_task"),
             String::from("task_arg"),
         ];
-        let state = NurState::new(temp_dir_path.clone(), args);
+        let state = NurState::new(temp_dir_path.clone(), args).unwrap();
 
         // Check everything works out
         assert_eq!(state.run_path, temp_dir_path);
@@ -174,7 +174,7 @@ mod tests {
 
         // Setup test
         let args = vec![String::from("nur"), String::from("--help")];
-        let state = NurState::new(temp_dir_path.clone(), args);
+        let state = NurState::new(temp_dir_path.clone(), args).unwrap();
 
         // Check everything works out
         assert_eq!(state.run_path, temp_dir_path);

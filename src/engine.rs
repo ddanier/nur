@@ -1,8 +1,9 @@
 use crate::args::{is_safe_taskname, parse_commandline_args, NurArgs};
 use crate::errors::{NurError, NurResult};
 use crate::names::{
-    NUR_ENV_NU_LIB_DIRS, NUR_NAME, NUR_VAR_CONFIG_DIR, NUR_VAR_DEFAULT_LIB_DIR,
-    NUR_VAR_PROJECT_PATH, NUR_VAR_RUN_PATH, NUR_VAR_TASK_NAME,
+    NUR_ENV_NUR_TASK_CALL, NUR_ENV_NUR_TASK_NAME, NUR_ENV_NUR_VERSION, NUR_ENV_NU_LIB_DIRS,
+    NUR_NAME, NUR_VAR_CONFIG_DIR, NUR_VAR_DEFAULT_LIB_DIR, NUR_VAR_PROJECT_PATH, NUR_VAR_RUN_PATH,
+    NUR_VAR_TASK_NAME,
 };
 use crate::nu_version::NU_VERSION;
 use crate::scripts::{get_default_nur_config, get_default_nur_env};
@@ -89,6 +90,12 @@ impl NurEngine {
             Value::string(self.state.lib_dir_path.to_string_lossy(), Span::unknown()),
         );
 
+        // Set some generic nur ENV
+        self.engine_state.add_env_var(
+            NUR_ENV_NUR_VERSION.to_string(),
+            Value::string(env!("CARGO_PKG_VERSION"), Span::unknown()),
+        );
+
         // Set config and env paths to .nur versions
         self.engine_state
             .set_config_path("env-path", self.state.env_path.clone());
@@ -120,7 +127,7 @@ impl NurEngine {
             ),
         );
         if self.state.has_task_call {
-            // TODO: Remove this! Users should use $env.NUR_TASK_NAME instead ;-)
+            // TODO: Should we remove this? Will always only include the main task, no sub tasks
             nur_record.push(
                 NUR_VAR_TASK_NAME,
                 Value::string(self.state.task_call[1].clone(), Span::unknown()), // strip "nur "
@@ -152,6 +159,21 @@ impl NurEngine {
         self.engine_state.merge_delta(working_set.render())?;
 
         Ok(())
+    }
+
+    fn _finalise_nur_state(&mut self) {
+        // Set further state as ENV
+        self.engine_state.add_env_var(
+            NUR_ENV_NUR_TASK_CALL.to_string(),
+            Value::string(self.state.task_call.join(" "), Span::unknown()),
+        );
+        if self.task_name.is_some() {
+            let task_name = self.get_task_name();
+            self.engine_state.add_env_var(
+                NUR_ENV_NUR_TASK_NAME.to_string(),
+                Value::string(task_name, Span::unknown()),
+            );
+        }
     }
 
     pub(crate) fn parse_args(&mut self) -> NurArgs {
@@ -187,19 +209,22 @@ impl NurEngine {
             self.source(self.state.local_nurfile_path.clone(), PipelineData::empty())?;
         }
 
+        self._find_task_name();
+        self._finalise_nur_state();
+
         Ok(())
     }
 
-    pub(crate) fn find_task_name(&mut self) -> bool {
+    fn _find_task_name(&mut self) {
         if !self.state.has_task_call {
-            return false;
+            return;
         }
 
         let task_call_length = self.state.task_call.len();
 
         let full_task_name = self.state.task_call[0..2].join(" ");
         if !self.has_def(full_task_name) {
-            return false;
+            return;
         }
 
         let mut i = 2;
@@ -215,8 +240,6 @@ impl NurEngine {
         }
 
         self.task_name = Some(self.state.task_call[0..i].join(" "));
-
-        true
     }
 
     pub(crate) fn get_task_def(&mut self) -> Option<&dyn Command> {
@@ -469,7 +492,7 @@ mod tests {
         File::create(&nurfile_path).unwrap();
 
         let args = vec![String::from("nur"), String::from("some_task")];
-        let nur_state = NurState::new(temp_dir_path.clone(), args);
+        let nur_state = NurState::new(temp_dir_path.clone(), args).unwrap();
         let engine_state = init_engine_state(temp_dir_path).unwrap();
 
         NurEngine::new(engine_state, nur_state).unwrap()
