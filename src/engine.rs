@@ -64,6 +64,7 @@ pub(crate) struct NurEngine {
     pub(crate) stack: Stack,
 
     pub(crate) state: NurState,
+    pub(crate) task_name: Option<String>,
 }
 
 impl NurEngine {
@@ -73,6 +74,7 @@ impl NurEngine {
             stack: Stack::new(),
 
             state: nur_state,
+            task_name: None,
         };
 
         nur_engine._apply_nur_state()?;
@@ -84,7 +86,7 @@ impl NurEngine {
         // Set default scripts path
         self.engine_state.add_env_var(
             NUR_ENV_NU_LIB_DIRS.to_string(),
-            Value::test_string(self.state.lib_dir_path.to_string_lossy()),
+            Value::string(self.state.lib_dir_path.to_string_lossy(), Span::unknown()),
         );
 
         // Set config and env paths to .nur versions
@@ -117,10 +119,11 @@ impl NurEngine {
                 Span::unknown(),
             ),
         );
-        if let Some(full_task_name) = self.find_task_name() {
+        if self.state.has_task_call {
+            // TODO: Remove this! Users should use $env.NUR_TASK_NAME instead ;-)
             nur_record.push(
                 NUR_VAR_TASK_NAME,
-                Value::string(&full_task_name[4..], Span::unknown()), // strip "nur "
+                Value::string(self.state.task_call[1].clone(), Span::unknown()), // strip "nur "
             );
         }
         nur_record.push(
@@ -187,16 +190,16 @@ impl NurEngine {
         Ok(())
     }
 
-    pub(crate) fn find_task_name(&self) -> Option<String> {
+    pub(crate) fn find_task_name(&mut self) -> bool {
         if !self.state.has_task_call {
-            return None;
+            return false;
         }
 
         let task_call_length = self.state.task_call.len();
 
         let full_task_name = self.state.task_call[0..2].join(" ");
         if !self.has_def(full_task_name) {
-            return None;
+            return false;
         }
 
         let mut i = 2;
@@ -211,9 +214,21 @@ impl NurEngine {
             i += 1; // check next argument
         }
 
-        let full_task_name = self.state.task_call[0..i].join(" ");
+        self.task_name = Some(self.state.task_call[0..i].join(" "));
 
-        Some(full_task_name)
+        true
+    }
+
+    pub(crate) fn get_task_def(&mut self) -> Option<&dyn Command> {
+        let task_name = self.task_name.clone().unwrap();
+
+        self.get_def(task_name)
+    }
+
+    pub(crate) fn get_task_name(&mut self) -> String {
+        let task_name = self.task_name.clone().unwrap();
+
+        String::from(&task_name[4..])
     }
 
     fn _parse_nu_script(

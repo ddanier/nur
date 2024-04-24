@@ -110,17 +110,14 @@ fn main() -> Result<ExitCode, miette::ErrReport> {
     }
 
     // Find full task name
-    let full_task_name = match nur_engine.find_task_name() {
-        Some(full_task_name) => full_task_name,
-        None => {
-            return Err(miette::ErrReport::from(NurError::TaskNotFound(
-                nur_engine.state.task_call[1].clone(),
-            )))
-        }
-    };
+    if !nur_engine.find_task_name() {
+        return Err(miette::ErrReport::from(NurError::TaskNotFound(
+            nur_engine.state.task_call[1].clone(),
+        )));
+    }
     #[cfg(feature = "debug")]
     if parsed_nur_args.debug_output {
-        eprintln!("full task name: {}", full_task_name);
+        eprintln!("full task name: {}", nur_engine.task_name.unwrap());
     }
 
     // Handle help
@@ -130,12 +127,12 @@ fn main() -> Result<ExitCode, miette::ErrReport> {
             std::process::exit(0);
         }
 
-        if let Some(command) = nur_engine.get_def(&full_task_name) {
+        if let Some(command) = nur_engine.clone().get_task_def() {
             nur_engine.clone().print_help(command);
             std::process::exit(0);
         } else {
             return Err(miette::ErrReport::from(NurError::TaskNotFound(
-                full_task_name.clone(),
+                nur_engine.task_name.clone().unwrap(),
             )));
         }
     }
@@ -182,7 +179,7 @@ fn main() -> Result<ExitCode, miette::ErrReport> {
             "Project path: {}",
             nur_engine.state.project_path.to_str().unwrap()
         );
-        println!("Executing task: {}", &full_task_name[4..]); // strip "nur "
+        println!("Executing task: {}", nur_engine.get_task_name());
         println!();
         exit_code = nur_engine.eval_and_print(full_task_call, input)?;
         #[cfg(feature = "debug")]
