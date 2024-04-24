@@ -1,4 +1,4 @@
-use crate::args::{parse_commandline_args, NurArgs};
+use crate::args::{is_safe_taskname, parse_commandline_args, NurArgs};
 use crate::errors::{NurError, NurResult};
 use crate::names::{
     NUR_ENV_NU_LIB_DIRS, NUR_NAME, NUR_VAR_CONFIG_DIR, NUR_VAR_DEFAULT_LIB_DIR,
@@ -117,10 +117,12 @@ impl NurEngine {
                 Span::unknown(),
             ),
         );
-        // nur_record.push(
-        //     NUR_VAR_TASK_NAME,
-        //     Value::string(&self.state.task_name, Span::unknown()),
-        // );
+        if let Some(full_task_name) = self.find_task_name() {
+            nur_record.push(
+                NUR_VAR_TASK_NAME,
+                Value::string(&full_task_name[4..], Span::unknown()), // strip "nur "
+            );
+        }
         nur_record.push(
             NUR_VAR_CONFIG_DIR,
             Value::string(
@@ -183,6 +185,35 @@ impl NurEngine {
         }
 
         Ok(())
+    }
+
+    pub(crate) fn find_task_name(&self) -> Option<String> {
+        if !self.state.has_task_call {
+            return None;
+        }
+
+        let task_call_length = self.state.task_call.len();
+
+        let full_task_name = self.state.task_call[0..2].join(" ");
+        if !self.has_def(full_task_name) {
+            return None;
+        }
+
+        let mut i = 2;
+        while i < task_call_length {
+            if !is_safe_taskname(&self.state.task_call[i]) {
+                break;
+            }
+            let next_possible_task_name = self.state.task_call[0..i + 1].join(" ");
+            if !self.has_def(next_possible_task_name) {
+                break;
+            }
+            i += 1; // check next argument
+        }
+
+        let full_task_name = self.state.task_call[0..i].join(" ");
+
+        Some(full_task_name)
     }
 
     fn _parse_nu_script(

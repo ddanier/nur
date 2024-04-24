@@ -1,4 +1,5 @@
 use crate::commands::Nur;
+use crate::errors::{NurError, NurResult};
 use crate::names::NUR_NAME;
 use nu_engine::{get_full_help, CallExt};
 use nu_parser::escape_for_script_arg;
@@ -11,9 +12,30 @@ use nu_protocol::{
 };
 use nu_utils::stdout_write_all_and_flush;
 
-pub(crate) fn gather_commandline_args(args: Vec<String>) -> (Vec<String>, bool, Vec<String>) {
+pub(crate) fn is_safe_taskname(name: &str) -> bool {
+    // This is basically similar to string_should_be_quoted
+    // in nushell/crates/nu-parser/src/deparse.rs:1,
+    // BUT may change as the requirements are different.
+    // Also I added "#" and "^", as seem in
+    // nushell/crates/nu-parser/src/parse_keywords.rs:175
+    !name.starts_with('$')
+        && !(name.chars().any(|c| {
+            c == ' '
+                || c == '('
+                || c == '\''
+                || c == '`'
+                || c == '"'
+                || c == '\\'
+                || c == '#'
+                || c == '^'
+        }))
+}
+
+pub(crate) fn gather_commandline_args(
+    args: Vec<String>,
+) -> NurResult<(Vec<String>, bool, Vec<String>)> {
     let mut args_to_nur = Vec::from([String::from(NUR_NAME)]);
-    let mut task_and_args = Vec::from([String::from(NUR_NAME)]);
+    let mut task_call = Vec::from([String::from(NUR_NAME)]);
     let mut has_task_call = false;
     let mut args_iter = args.iter();
 
@@ -21,8 +43,15 @@ pub(crate) fn gather_commandline_args(args: Vec<String>) -> (Vec<String>, bool, 
     #[allow(clippy::while_let_on_iterator)]
     while let Some(arg) = args_iter.next() {
         if !arg.starts_with('-') {
+            // At least first non nur argument must be safe
+            if !is_safe_taskname(arg) {
+                eprintln!("{}", arg);
+                return Err(NurError::InvalidTaskName(arg.clone()));
+            }
+
+            // Register task name and switch to task call parsing
             has_task_call = true;
-            task_and_args.push(arg.clone());
+            task_call.push(arg.clone());
             break;
         }
 
@@ -42,14 +71,14 @@ pub(crate) fn gather_commandline_args(args: Vec<String>) -> (Vec<String>, bool, 
         // Consume remaining elements in iterator
         #[allow(clippy::while_let_on_iterator)]
         while let Some(arg) = args_iter.next() {
-            task_and_args.push(escape_for_script_arg(arg));
+            task_call.push(escape_for_script_arg(arg));
         }
     } else {
-        // Also remove "nur" from task_and_args
-        task_and_args.clear();
+        // Also remove "nur" from task_call
+        task_call.clear();
     }
 
-    (args_to_nur, has_task_call, task_and_args)
+    Ok((args_to_nur, has_task_call, task_call))
 }
 
 pub(crate) fn parse_commandline_args(
@@ -141,11 +170,11 @@ mod tests {
             String::from("--task-option"),
             String::from("task-value"),
         ];
-        let (nur_args, has_task_call, task_and_args) = gather_commandline_args(args);
+        let (nur_args, has_task_call, task_call) = gather_commandline_args(args).unwrap();
         assert_eq!(nur_args, vec![String::from("nur"), String::from("--quiet")]);
         assert_eq!(has_task_call, true);
         assert_eq!(
-            task_and_args,
+            task_call,
             vec![
                 String::from("nur"),
                 String::from("some_task_name"),
@@ -163,11 +192,11 @@ mod tests {
             String::from("--task-option"),
             String::from("task-value"),
         ];
-        let (nur_args, has_task_call, task_and_args) = gather_commandline_args(args);
+        let (nur_args, has_task_call, task_call) = gather_commandline_args(args).unwrap();
         assert_eq!(nur_args, vec![String::from("nur")]);
         assert_eq!(has_task_call, true);
         assert_eq!(
-            task_and_args,
+            task_call,
             vec![
                 String::from("nur"),
                 String::from("some_task_name"),
@@ -180,10 +209,10 @@ mod tests {
     #[test]
     fn test_gather_commandline_args_handles_missing_task_name() {
         let args = vec![String::from("nur"), String::from("--help")];
-        let (nur_args, has_task_call, task_and_args) = gather_commandline_args(args);
+        let (nur_args, has_task_call, task_call) = gather_commandline_args(args).unwrap();
         assert_eq!(nur_args, vec![String::from("nur"), String::from("--help")]);
         assert_eq!(has_task_call, false);
-        assert_eq!(task_and_args, vec![] as Vec<String>);
+        assert_eq!(task_call, vec![] as Vec<String>);
     }
 
     #[test]
@@ -193,11 +222,11 @@ mod tests {
             String::from("--quiet"),
             String::from("some_task_name"),
         ];
-        let (nur_args, has_task_call, task_and_args) = gather_commandline_args(args);
+        let (nur_args, has_task_call, task_call) = gather_commandline_args(args).unwrap();
         assert_eq!(nur_args, vec![String::from("nur"), String::from("--quiet")]);
         assert_eq!(has_task_call, true);
         assert_eq!(
-            task_and_args,
+            task_call,
             vec![String::from("nur"), String::from("some_task_name")]
         );
     }
@@ -205,10 +234,10 @@ mod tests {
     #[test]
     fn test_gather_commandline_args_handles_no_args_at_all() {
         let args = vec![String::from("nur")];
-        let (nur_args, has_task_call, task_and_args) = gather_commandline_args(args);
+        let (nur_args, has_task_call, task_call) = gather_commandline_args(args).unwrap();
         assert_eq!(nur_args, vec![String::from("nur")]);
         assert_eq!(has_task_call, false);
-        assert_eq!(task_and_args, vec![] as Vec<String>);
+        assert_eq!(task_call, vec![] as Vec<String>);
     }
 
     fn _create_minimal_engine_for_erg_parsing() -> EngineState {

@@ -1,4 +1,5 @@
 use crate::args::gather_commandline_args;
+use crate::errors::NurResult;
 use crate::names::{
     NUR_CONFIG_CONFIG_FILENAME, NUR_CONFIG_DIR, NUR_CONFIG_ENV_FILENAME, NUR_CONFIG_LIB_PATH,
     NUR_FILE, NUR_LOCAL_FILE,
@@ -22,11 +23,11 @@ pub(crate) struct NurState {
 
     pub(crate) args_to_nur: Vec<String>,
     pub(crate) has_task_call: bool,
-    pub(crate) task_and_args: Vec<String>,
+    pub(crate) task_call: Vec<String>,
 }
 
 impl NurState {
-    pub(crate) fn new(run_path: PathBuf, args: Vec<String>) -> Self {
+    pub(crate) fn new(run_path: PathBuf, args: Vec<String>) -> NurResult<Self> {
         // Get initial directory details
         let found_project_path = find_project_path(&run_path);
         let has_project_path = found_project_path.is_some();
@@ -43,9 +44,9 @@ impl NurState {
         let local_nurfile_path = project_path.join(NUR_LOCAL_FILE);
 
         // Parse args into bits
-        let (args_to_nur, has_task_call, task_and_args) = gather_commandline_args(args);
+        let (args_to_nur, has_task_call, task_call) = gather_commandline_args(args)?;
 
-        NurState {
+        Ok(NurState {
             run_path,
             has_project_path,
             project_path,
@@ -60,8 +61,8 @@ impl NurState {
 
             args_to_nur,
             has_task_call,
-            task_and_args,
-        }
+            task_call,
+        })
     }
 }
 
@@ -109,7 +110,7 @@ mod tests {
         );
         assert_eq!(state.has_task_call, true);
         assert_eq!(
-            state.task_and_args,
+            state.task_call,
             vec![
                 String::from("nur"),
                 String::from("some_task"),
@@ -157,7 +158,7 @@ mod tests {
         );
         assert_eq!(state.has_task_call, true);
         assert_eq!(
-            state.task_and_args,
+            state.task_call,
             vec![
                 String::from("nur"),
                 String::from("some_task"),
@@ -196,6 +197,6 @@ mod tests {
             vec![String::from("nur"), String::from("--help"),]
         );
         assert_eq!(state.has_task_call, false);
-        assert_eq!(state.task_and_args, vec![] as Vec<String>);
+        assert_eq!(state.task_call, vec![] as Vec<String>);
     }
 }
