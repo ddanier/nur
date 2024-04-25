@@ -24,7 +24,7 @@ pub(crate) struct NurState {
     pub(crate) args_to_nur: Vec<String>,
     pub(crate) has_task_call: bool,
     pub(crate) task_call: Vec<String>,
-    pub(crate) task_name: Option<String>,
+    pub(crate) task_name: Option<String>, // full task name, like "nur some-task"
 }
 
 impl NurState {

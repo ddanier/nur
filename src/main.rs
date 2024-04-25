@@ -91,7 +91,12 @@ fn main() -> Result<ExitCode, miette::ErrReport> {
     if parsed_nur_args.list_tasks {
         // TODO: Parse and handle commands without eval
         nur_engine.eval_and_print(
-            r#"scope commands | where name starts-with "nur " and category == "default" | get name | each { |it| $it | str substring 4.. } | sort"#,
+            r#"scope commands 
+            | where name starts-with "nur " and category == "default" 
+            | get name 
+            | each { |it| $it | str substring 4.. } 
+            | sort 
+            | table --theme none --index false"#,
             PipelineData::empty(),
         )?;
 
@@ -179,7 +184,7 @@ fn main() -> Result<ExitCode, miette::ErrReport> {
             "Project path: {}",
             nur_engine.state.project_path.to_str().unwrap()
         );
-        println!("Executing task: {}", nur_engine.get_task_name());
+        println!("Executing task: {}", nur_engine.get_short_task_name());
         println!();
         exit_code = nur_engine.eval_and_print(full_task_call, input)?;
         #[cfg(feature = "debug")]

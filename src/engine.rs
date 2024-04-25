@@ -166,7 +166,7 @@ impl NurEngine {
             Value::string(self.state.task_call.join(" "), Span::unknown()),
         );
         if self.state.task_name.is_some() {
-            let task_name = self.get_task_name();
+            let task_name = self.get_short_task_name();
             self.engine_state.add_env_var(
                 NUR_ENV_NUR_TASK_NAME.to_string(),
                 Value::string(task_name, Span::unknown()),
@@ -246,7 +246,8 @@ impl NurEngine {
         self.get_def(task_name)
     }
 
-    pub(crate) fn get_task_name(&mut self) -> String {
+    // Return task name without the "nur " prefix
+    pub(crate) fn get_short_task_name(&self) -> String {
         let task_name = self.state.task_name.clone().unwrap();
 
         String::from(&task_name[4..])
@@ -489,7 +490,11 @@ mod tests {
         let nurfile_path = temp_dir.path().join(NUR_FILE);
         File::create(&nurfile_path).unwrap();
 
-        let args = vec![String::from("nur"), String::from("some_task")];
+        let args = vec![
+            String::from("nur"),
+            String::from("some-task"),
+            String::from("sub-task"),
+        ];
         let nur_state = NurState::new(temp_dir_path.clone(), args).unwrap();
         let engine_state = init_engine_state(temp_dir_path).unwrap();
 
@@ -613,5 +618,86 @@ mod tests {
         assert!(_has_decl(&mut nur_engine.engine_state, "module-command"));
 
         _cleanup_nur_engine(&temp_dir);
+    }
+
+    #[test]
+    fn test_nur_engine_will_set_task_name() {
+        let temp_dir = tempdir().unwrap();
+        let mut nur_engine = _prepare_nur_engine(&temp_dir);
+
+        let nurfile_path = temp_dir.path().join(NUR_FILE);
+        let mut nurfile = File::create(&nurfile_path).unwrap();
+        nurfile.write_all(b"def \"nur some-task\" [] {}").unwrap();
+
+        nur_engine.load_env().unwrap();
+        nur_engine.load_config().unwrap();
+        nur_engine.load_nurfiles().unwrap();
+
+        assert!(nur_engine.state.task_name.is_some());
+        assert!(nur_engine.state.task_name.clone().unwrap() == "nur some-task");
+        assert!(nur_engine.get_short_task_name() == "some-task");
+    }
+
+    #[test]
+    fn test_nur_engine_will_check_task_name_exists() {
+        let temp_dir = tempdir().unwrap();
+        let mut nur_engine = _prepare_nur_engine(&temp_dir);
+
+        let nurfile_path = temp_dir.path().join(NUR_FILE);
+        File::create(&nurfile_path).unwrap();
+
+        nur_engine.load_env().unwrap();
+        nur_engine.load_config().unwrap();
+        nur_engine.load_nurfiles().unwrap();
+
+        assert!(nur_engine.state.task_name.is_none());
+    }
+
+    #[test]
+    fn test_nur_engine_will_allow_sub_tasks() {
+        let temp_dir = tempdir().unwrap();
+        let mut nur_engine = _prepare_nur_engine(&temp_dir);
+
+        let nurfile_path = temp_dir.path().join(NUR_FILE);
+        let mut nurfile = File::create(&nurfile_path).unwrap();
+        nurfile
+            .write_all(b"def \"nur some-task\" [] {} ; def \"nur some-task sub-task\" [] {}")
+            .unwrap();
+
+        nur_engine.load_env().unwrap();
+        nur_engine.load_config().unwrap();
+        nur_engine.load_nurfiles().unwrap();
+
+        assert!(nur_engine.state.task_name.is_some());
+        assert!(nur_engine.state.task_name.clone().unwrap() == "nur some-task sub-task");
+        assert!(nur_engine.get_short_task_name() == "some-task sub-task");
+    }
+
+    #[test]
+    fn test_nur_engine_will_set_env() {
+        let temp_dir = tempdir().unwrap();
+        let mut nur_engine = _prepare_nur_engine(&temp_dir);
+
+        let nurfile_path = temp_dir.path().join(NUR_FILE);
+        let mut nurfile = File::create(&nurfile_path).unwrap();
+        nurfile.write_all(b"def \"nur some-task\" [] {}").unwrap();
+
+        assert!(nur_engine
+            .engine_state
+            .get_env_var(NUR_ENV_NUR_VERSION)
+            .is_some());
+
+        nur_engine.load_env().unwrap();
+        nur_engine.load_config().unwrap();
+        nur_engine.load_nurfiles().unwrap();
+
+        assert!(nur_engine
+            .engine_state
+            .get_env_var(NUR_ENV_NUR_TASK_NAME)
+            .is_some());
+        assert!(nur_engine
+            .engine_state
+            .get_env_var(NUR_ENV_NUR_TASK_CALL)
+            .is_some());
     }
 }
