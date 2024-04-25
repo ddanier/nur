@@ -1,8 +1,9 @@
-use crate::args::{parse_commandline_args, NurArgs};
+use crate::args::{is_safe_taskname, parse_commandline_args, NurArgs};
 use crate::errors::{NurError, NurResult};
 use crate::names::{
-    NUR_ENV_NU_LIB_DIRS, NUR_NAME, NUR_VAR_CONFIG_DIR, NUR_VAR_DEFAULT_LIB_DIR,
-    NUR_VAR_PROJECT_PATH, NUR_VAR_RUN_PATH, NUR_VAR_TASK_NAME,
+    NUR_ENV_NUR_TASK_CALL, NUR_ENV_NUR_TASK_NAME, NUR_ENV_NUR_VERSION, NUR_ENV_NU_LIB_DIRS,
+    NUR_NAME, NUR_VAR_CONFIG_DIR, NUR_VAR_DEFAULT_LIB_DIR, NUR_VAR_PROJECT_PATH, NUR_VAR_RUN_PATH,
+    NUR_VAR_TASK_NAME,
 };
 use crate::nu_version::NU_VERSION;
 use crate::scripts::{get_default_nur_config, get_default_nur_env};
@@ -84,7 +85,13 @@ impl NurEngine {
         // Set default scripts path
         self.engine_state.add_env_var(
             NUR_ENV_NU_LIB_DIRS.to_string(),
-            Value::test_string(self.state.lib_dir_path.to_string_lossy()),
+            Value::string(self.state.lib_dir_path.to_string_lossy(), Span::unknown()),
+        );
+
+        // Set some generic nur ENV
+        self.engine_state.add_env_var(
+            NUR_ENV_NUR_VERSION.to_string(),
+            Value::string(env!("CARGO_PKG_VERSION"), Span::unknown()),
         );
 
         // Set config and env paths to .nur versions
@@ -117,10 +124,13 @@ impl NurEngine {
                 Span::unknown(),
             ),
         );
-        nur_record.push(
-            NUR_VAR_TASK_NAME,
-            Value::string(&self.state.task_name, Span::unknown()),
-        );
+        if self.state.has_task_call {
+            // TODO: Should we remove this? Will always only include the main task, no sub tasks
+            nur_record.push(
+                NUR_VAR_TASK_NAME,
+                Value::string(self.state.task_call[1].clone(), Span::unknown()), // strip "nur "
+            );
+        }
         nur_record.push(
             NUR_VAR_CONFIG_DIR,
             Value::string(
@@ -147,6 +157,21 @@ impl NurEngine {
         self.engine_state.merge_delta(working_set.render())?;
 
         Ok(())
+    }
+
+    fn _finalise_nur_state(&mut self) {
+        // Set further state as ENV
+        self.engine_state.add_env_var(
+            NUR_ENV_NUR_TASK_CALL.to_string(),
+            Value::string(self.state.task_call.join(" "), Span::unknown()),
+        );
+        if self.state.task_name.is_some() {
+            let task_name = self.get_short_task_name();
+            self.engine_state.add_env_var(
+                NUR_ENV_NUR_TASK_NAME.to_string(),
+                Value::string(task_name, Span::unknown()),
+            );
+        }
     }
 
     pub(crate) fn parse_args(&mut self) -> NurArgs {
@@ -182,7 +207,54 @@ impl NurEngine {
             self.source(self.state.local_nurfile_path.clone(), PipelineData::empty())?;
         }
 
+        self._find_task_name();
+        self._finalise_nur_state();
+
         Ok(())
+    }
+
+    fn _find_task_name(&mut self) {
+        if !self.state.has_task_call {
+            return;
+        }
+
+        let task_call_length = self.state.task_call.len();
+
+        let mut search_task_index = 2; // will start with main task
+        let mut found_task_index = 0; // checked above
+        while search_task_index <= task_call_length {
+            // next sub task needs to be safe
+            if !is_safe_taskname(&self.state.task_call[search_task_index - 1]) {
+                break;
+            }
+            // Test if sub-task exists
+            let next_possible_task_name = self.state.task_call[0..search_task_index].join(" ");
+            if self.has_def(next_possible_task_name) {
+                // If the sub-task exists, store found_task_index
+                found_task_index = search_task_index;
+            }
+            search_task_index += 1; // check next argument, if it exists
+        }
+
+        // If we have not found any task name, abort
+        if found_task_index == 0 {
+            return;
+        }
+
+        self.state.task_name = Some(self.state.task_call[0..found_task_index].join(" "));
+    }
+
+    pub(crate) fn get_task_def(&mut self) -> Option<&dyn Command> {
+        let task_name = self.state.task_name.clone().unwrap();
+
+        self.get_def(task_name)
+    }
+
+    // Return task name without the "nur " prefix
+    pub(crate) fn get_short_task_name(&self) -> String {
+        let task_name = self.state.task_name.clone().unwrap();
+
+        String::from(&task_name[4..])
     }
 
     fn _parse_nu_script(
@@ -422,8 +494,12 @@ mod tests {
         let nurfile_path = temp_dir.path().join(NUR_FILE);
         File::create(&nurfile_path).unwrap();
 
-        let args = vec![String::from("nur"), String::from("some_task")];
-        let nur_state = NurState::new(temp_dir_path.clone(), args);
+        let args = vec![
+            String::from("nur"),
+            String::from("some-task"),
+            String::from("sub-task"),
+        ];
+        let nur_state = NurState::new(temp_dir_path.clone(), args).unwrap();
         let engine_state = init_engine_state(temp_dir_path).unwrap();
 
         NurEngine::new(engine_state, nur_state).unwrap()
@@ -546,5 +622,86 @@ mod tests {
         assert!(_has_decl(&mut nur_engine.engine_state, "module-command"));
 
         _cleanup_nur_engine(&temp_dir);
+    }
+
+    #[test]
+    fn test_nur_engine_will_set_task_name() {
+        let temp_dir = tempdir().unwrap();
+        let mut nur_engine = _prepare_nur_engine(&temp_dir);
+
+        let nurfile_path = temp_dir.path().join(NUR_FILE);
+        let mut nurfile = File::create(&nurfile_path).unwrap();
+        nurfile.write_all(b"def \"nur some-task\" [] {}").unwrap();
+
+        nur_engine.load_env().unwrap();
+        nur_engine.load_config().unwrap();
+        nur_engine.load_nurfiles().unwrap();
+
+        assert!(nur_engine.state.task_name.is_some());
+        assert!(nur_engine.state.task_name.clone().unwrap() == "nur some-task");
+        assert!(nur_engine.get_short_task_name() == "some-task");
+    }
+
+    #[test]
+    fn test_nur_engine_will_check_task_name_exists() {
+        let temp_dir = tempdir().unwrap();
+        let mut nur_engine = _prepare_nur_engine(&temp_dir);
+
+        let nurfile_path = temp_dir.path().join(NUR_FILE);
+        File::create(&nurfile_path).unwrap();
+
+        nur_engine.load_env().unwrap();
+        nur_engine.load_config().unwrap();
+        nur_engine.load_nurfiles().unwrap();
+
+        assert!(nur_engine.state.task_name.is_none());
+    }
+
+    #[test]
+    fn test_nur_engine_will_allow_sub_tasks() {
+        let temp_dir = tempdir().unwrap();
+        let mut nur_engine = _prepare_nur_engine(&temp_dir);
+
+        let nurfile_path = temp_dir.path().join(NUR_FILE);
+        let mut nurfile = File::create(&nurfile_path).unwrap();
+        nurfile
+            .write_all(b"def \"nur some-task sub-task\" [] {}")
+            .unwrap();
+
+        nur_engine.load_env().unwrap();
+        nur_engine.load_config().unwrap();
+        nur_engine.load_nurfiles().unwrap();
+
+        assert!(nur_engine.state.task_name.is_some());
+        assert!(nur_engine.state.task_name.clone().unwrap() == "nur some-task sub-task");
+        assert!(nur_engine.get_short_task_name() == "some-task sub-task");
+    }
+
+    #[test]
+    fn test_nur_engine_will_set_env() {
+        let temp_dir = tempdir().unwrap();
+        let mut nur_engine = _prepare_nur_engine(&temp_dir);
+
+        let nurfile_path = temp_dir.path().join(NUR_FILE);
+        let mut nurfile = File::create(&nurfile_path).unwrap();
+        nurfile.write_all(b"def \"nur some-task\" [] {}").unwrap();
+
+        assert!(nur_engine
+            .engine_state
+            .get_env_var(NUR_ENV_NUR_VERSION)
+            .is_some());
+
+        nur_engine.load_env().unwrap();
+        nur_engine.load_config().unwrap();
+        nur_engine.load_nurfiles().unwrap();
+
+        assert!(nur_engine
+            .engine_state
+            .get_env_var(NUR_ENV_NUR_TASK_NAME)
+            .is_some());
+        assert!(nur_engine
+            .engine_state
+            .get_env_var(NUR_ENV_NUR_TASK_CALL)
+            .is_some());
     }
 }

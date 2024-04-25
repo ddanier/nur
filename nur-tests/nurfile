@@ -6,6 +6,9 @@ let nurcmd = "./../target/release/nur"
 
 def "nur test-env" [] {
     std assert (($env.PWD | path join ".nur" "scripts") in $env.NU_LIB_DIRS)
+    std assert ($env.NUR_VERSION | is-not-empty)
+    std assert ($env.NUR_TASK_NAME | is-not-empty)
+    std assert ($env.NUR_TASK_CALL | is-not-empty)
 }
 
 def "nur test-config" [] {
@@ -66,6 +69,25 @@ def "nur test-invalid-executable" [] {
     } catch {
         # all ok
     }
+}
+
+def "nur do-sub-task" [] { print "ok" }
+def "nur do-sub-task sub" [] { print "sub-ok" }
+def "nur test-sub-task" [] {
+    std assert ((run-nur do-sub-task) == "ok")
+    std assert ((run-nur do-sub-task sub) == "sub-ok")
+}
+
+def "nur do-sub-task-without-parent sub" [] { print "sub-ok" }
+def "nur test-sub-task-without-parent" [] {
+    std assert ((run-nur do-sub-task-without-parent sub) == "sub-ok")
+}
+
+def --wrapped "nur do-sub-task-with-any-args sub" [...args] { print "sub-ok" }
+def "nur test-sub-task-with-any-args" [] {
+    std assert ((run-nur do-sub-task-with-any-args sub) == "sub-ok")
+    std assert ((run-nur do-sub-task-with-any-args sub --foo bar bla) == "sub-ok")
+    std assert ((run-nur do-sub-task-with-any-args sub some random args) == "sub-ok")
 }
 
 # Utils and other commands

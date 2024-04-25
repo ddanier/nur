@@ -14,7 +14,6 @@ use crate::compat::show_nurscripts_hint;
 use crate::engine::init_engine_state;
 use crate::engine::NurEngine;
 use crate::errors::NurError;
-use crate::names::NUR_NAME;
 use crate::state::NurState;
 use miette::Result;
 use nu_ansi_term::Color;
@@ -27,7 +26,7 @@ use std::process::ExitCode;
 fn main() -> Result<ExitCode, miette::ErrReport> {
     // Initialise nur state
     let run_path = get_init_cwd();
-    let nur_state = NurState::new(run_path, env::args().collect());
+    let nur_state = NurState::new(run_path, env::args().collect())?;
 
     // Create raw nu engine state
     let engine_state = init_engine_state(&nur_state.project_path)?;
@@ -45,8 +44,7 @@ fn main() -> Result<ExitCode, miette::ErrReport> {
         eprintln!("project path: {:?}", nur_engine.state.project_path);
         eprintln!();
         eprintln!("nur args: {:?}", parsed_nur_args);
-        eprintln!("task name: {:?}", nur_engine.state.task_name);
-        eprintln!("task args: {:?}", nur_engine.state.args_to_task);
+        eprintln!("task call: {:?}", nur_engine.state.task_call);
         eprintln!();
         eprintln!("nur config dir: {:?}", nur_engine.state.config_dir);
         eprintln!(
@@ -93,40 +91,55 @@ fn main() -> Result<ExitCode, miette::ErrReport> {
     if parsed_nur_args.list_tasks {
         // TODO: Parse and handle commands without eval
         nur_engine.eval_and_print(
-            r#"scope commands | where name starts-with "nur " and category == "default" | get name | each { |it| $it | str substring 4.. } | sort"#,
+            r#"scope commands 
+            | where name starts-with "nur " and category == "default" 
+            | get name 
+            | each { |it| $it | str substring 4.. } 
+            | sort 
+            | table --theme none --index false"#,
             PipelineData::empty(),
         )?;
 
         std::process::exit(0);
     }
 
-    // Initialize internal data
-    let task_def_name = format!("{} {}", NUR_NAME, nur_engine.state.task_name);
+    // Show help if no task call was found
+    // (error exit if --help was not passed)
+    if !nur_engine.state.has_task_call {
+        nur_engine.print_help(&Nur);
+        if parsed_nur_args.show_help {
+            std::process::exit(0);
+        } else {
+            std::process::exit(1);
+        }
+    }
+
+    // Ensure we have a task name
+    if nur_engine.state.task_name.is_none() {
+        return Err(miette::ErrReport::from(NurError::TaskNotFound(
+            nur_engine.state.task_call.join(" "),
+        )));
+    }
     #[cfg(feature = "debug")]
     if parsed_nur_args.debug_output {
-        eprintln!("task def name: {}", task_def_name);
+        eprintln!("full task name: {}", nur_engine.state.task_name.unwrap());
     }
 
     // Handle help
-    if parsed_nur_args.show_help || nur_engine.state.task_name.is_empty() {
-        if nur_engine.state.task_name.is_empty() {
+    if parsed_nur_args.show_help {
+        if !nur_engine.state.has_task_call {
             nur_engine.print_help(&Nur);
-        } else if let Some(command) = nur_engine.get_def(task_def_name) {
-            nur_engine.clone().print_help(command);
-        } else {
-            return Err(miette::ErrReport::from(NurError::TaskNotFound(
-                nur_engine.state.task_name,
-            )));
+            std::process::exit(0);
         }
 
-        std::process::exit(0);
-    }
-
-    // Check if requested task exists
-    if !nur_engine.has_def(&task_def_name) {
-        return Err(miette::ErrReport::from(NurError::TaskNotFound(
-            nur_engine.state.task_name,
-        )));
+        if let Some(command) = nur_engine.clone().get_task_def() {
+            nur_engine.clone().print_help(command);
+            std::process::exit(0);
+        } else {
+            return Err(miette::ErrReport::from(NurError::TaskNotFound(
+                nur_engine.state.task_call.join(" "),
+            )));
+        }
     }
 
     // Prepare input data - if requested
@@ -153,11 +166,7 @@ fn main() -> Result<ExitCode, miette::ErrReport> {
 
     // Execute the task
     let exit_code: i64;
-    let full_task_call = format!(
-        "{} {}",
-        task_def_name,
-        nur_engine.state.args_to_task.join(" ")
-    );
+    let full_task_call = nur_engine.state.task_call.join(" ");
     #[cfg(feature = "debug")]
     if parsed_nur_args.debug_output {
         eprintln!("full task call: {}", full_task_call);
@@ -171,8 +180,11 @@ fn main() -> Result<ExitCode, miette::ErrReport> {
         }
     } else {
         println!("nur version {}", env!("CARGO_PKG_VERSION"));
-        println!("Project path {:?}", nur_engine.state.project_path);
-        println!("Executing task {}", nur_engine.state.task_name);
+        println!(
+            "Project path: {}",
+            nur_engine.state.project_path.to_str().unwrap()
+        );
+        println!("Executing task: {}", nur_engine.get_short_task_name());
         println!();
         exit_code = nur_engine.eval_and_print(full_task_call, input)?;
         #[cfg(feature = "debug")]

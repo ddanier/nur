@@ -62,6 +62,20 @@ def --wrapped "nur lint" [
     cargo clippy ...$args
 }
 
+# Run all QA tasks
+def "nur qa" [] {
+    print "Running rust tests"
+    nur test
+    print "Running nur tests"
+    nur test-nur
+    print "Running clippy linter"
+    nur lint
+    print "Running cargo check"
+    nur cargo check
+    print "Running cargo fmt"
+    nur cargo fmt
+}
+
 # Update version in Cargo.toml
 def "nur version" [
     version: string

@@ -22,7 +22,11 @@ pub enum NurError {
     #[diagnostic()]
     ParseErrors(#[related] Vec<ParseError>),
 
-    #[error("Could not find the task {0}")]
+    #[error("Invalid task name '{0}'")]
+    #[diagnostic()]
+    InvalidTaskName(String),
+
+    #[error("Could not find the task for call '{0}'")]
     #[diagnostic()]
     TaskNotFound(String),
 
