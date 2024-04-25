@@ -24,6 +24,7 @@ pub(crate) struct NurState {
     pub(crate) args_to_nur: Vec<String>,
     pub(crate) has_task_call: bool,
     pub(crate) task_call: Vec<String>,
+    pub(crate) task_name: Option<String>,
 }
 
 impl NurState {
@@ -62,6 +63,7 @@ impl NurState {
             args_to_nur,
             has_task_call,
             task_call,
+            task_name: None,
         })
     }
 }

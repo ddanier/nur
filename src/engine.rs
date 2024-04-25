@@ -65,7 +65,6 @@ pub(crate) struct NurEngine {
     pub(crate) stack: Stack,
 
     pub(crate) state: NurState,
-    pub(crate) task_name: Option<String>,
 }
 
 impl NurEngine {
@@ -75,7 +74,6 @@ impl NurEngine {
             stack: Stack::new(),
 
             state: nur_state,
-            task_name: None,
         };
 
         nur_engine._apply_nur_state()?;
@@ -167,7 +165,7 @@ impl NurEngine {
             NUR_ENV_NUR_TASK_CALL.to_string(),
             Value::string(self.state.task_call.join(" "), Span::unknown()),
         );
-        if self.task_name.is_some() {
+        if self.state.task_name.is_some() {
             let task_name = self.get_task_name();
             self.engine_state.add_env_var(
                 NUR_ENV_NUR_TASK_NAME.to_string(),
@@ -239,17 +237,17 @@ impl NurEngine {
             i += 1; // check next argument
         }
 
-        self.task_name = Some(self.state.task_call[0..i].join(" "));
+        self.state.task_name = Some(self.state.task_call[0..i].join(" "));
     }
 
     pub(crate) fn get_task_def(&mut self) -> Option<&dyn Command> {
-        let task_name = self.task_name.clone().unwrap();
+        let task_name = self.state.task_name.clone().unwrap();
 
         self.get_def(task_name)
     }
 
     pub(crate) fn get_task_name(&mut self) -> String {
-        let task_name = self.task_name.clone().unwrap();
+        let task_name = self.state.task_name.clone().unwrap();
 
         String::from(&task_name[4..])
     }

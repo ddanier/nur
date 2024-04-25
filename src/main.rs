@@ -110,14 +110,14 @@ fn main() -> Result<ExitCode, miette::ErrReport> {
     }
 
     // Ensure we have a task name
-    if nur_engine.task_name.is_none() {
+    if nur_engine.state.task_name.is_none() {
         return Err(miette::ErrReport::from(NurError::TaskNotFound(
             nur_engine.state.task_call[1].clone(),
         )));
     }
     #[cfg(feature = "debug")]
     if parsed_nur_args.debug_output {
-        eprintln!("full task name: {}", nur_engine.task_name.unwrap());
+        eprintln!("full task name: {}", nur_engine.state.task_name.unwrap());
     }
 
     // Handle help
@@ -132,7 +132,7 @@ fn main() -> Result<ExitCode, miette::ErrReport> {
             std::process::exit(0);
         } else {
             return Err(miette::ErrReport::from(NurError::TaskNotFound(
-                nur_engine.task_name.clone().unwrap(),
+                nur_engine.state.task_name.clone().unwrap(),
             )));
         }
     }
