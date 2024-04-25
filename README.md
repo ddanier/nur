@@ -102,7 +102,13 @@ inside the project. This is useful to always have a reproducible base setup for 
 `nur` will provide the internal state and config in the variable `$nur`, containing:
 * `$nur.run-path`: The path `nur` was executed in
 * `$nur.project-path`: The path `nur` executes the tasks in, this means the path the `nurfile` was found
-* `$nur.task-name`: The name of the task being executed, if any
+* `$nur.task-name`: The main name of the task being executed, if any
+  (Note: If you are running sub task this will *not* include the sub tasks names, use `$env.NUR_TASK_NAME` instead)
+
+`nur` will also set the following ENV variables:
+* `NUR_VERSION`: The version of nur being executed (similar to `NU_VERSION`)
+* `NUR_TASK_NAME`: The full name of the task being executed, including sub tasks
+* `NUR_TASK_CALL`: The full call to the task, including "nur" prefix and all arguments
 
 ### Defining `nur` tasks
 
@@ -339,6 +345,23 @@ def "nur something" [] {
     some-helper
 }
 ```
+
+### Using sub tasks for better structure
+
+Like with normal `nu` shell commands `nur` can also handle sub commands and thus sub tasks.
+
+```nu-script
+def "nur something" [] {
+    print "The main something task"
+}
+
+def "nur something sub" [] {
+    print "The sub task to something"
+}
+```
+
+You could then just call `nur something sub` to run the sub task. This is a great way to organise your
+`nurfile` into different logical parts, for example when using a monorepo.
 
 ### Organising your `nur` helpers into modules
 
