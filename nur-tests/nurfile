@@ -78,6 +78,11 @@ def "nur test-sub-task" [] {
     std assert ((run-nur do-test-sub-task sub) == "sub-ok")
 }
 
+def "nur do-test-sub-task-without-parent sub" [] { print "sub-ok" }
+def "nur test-sub-task-without-parent" [] {
+    std assert ((run-nur do-test-sub-task-without-parent sub) == "sub-ok")
+}
+
 # Utils and other commands
 
 def is-windows [] {

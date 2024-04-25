@@ -26,7 +26,7 @@ pub enum NurError {
     #[diagnostic()]
     InvalidTaskName(String),
 
-    #[error("Could not find the task '{0}'")]
+    #[error("Could not find the task for call '{0}'")]
     #[diagnostic()]
     TaskNotFound(String),
 

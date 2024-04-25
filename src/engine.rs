@@ -220,24 +220,28 @@ impl NurEngine {
 
         let task_call_length = self.state.task_call.len();
 
-        let full_task_name = self.state.task_call[0..2].join(" ");
-        if !self.has_def(full_task_name) {
+        let mut search_task_index = 2; // will start with main task
+        let mut found_task_index = 0; // checked above
+        while search_task_index <= task_call_length {
+            // next sub task needs to be safe
+            if !is_safe_taskname(&self.state.task_call[search_task_index - 1]) {
+                break;
+            }
+            // Test if sub-task exists
+            let next_possible_task_name = self.state.task_call[0..search_task_index].join(" ");
+            if self.has_def(next_possible_task_name) {
+                // If the sub-task exists, store found_task_index
+                found_task_index = search_task_index;
+            }
+            search_task_index += 1; // check next argument, if it exists
+        }
+
+        // If we have not found any task name, abort
+        if found_task_index == 0 {
             return;
         }
 
-        let mut i = 2;
-        while i < task_call_length {
-            if !is_safe_taskname(&self.state.task_call[i]) {
-                break;
-            }
-            let next_possible_task_name = self.state.task_call[0..i + 1].join(" ");
-            if !self.has_def(next_possible_task_name) {
-                break;
-            }
-            i += 1; // check next argument
-        }
-
-        self.state.task_name = Some(self.state.task_call[0..i].join(" "));
+        self.state.task_name = Some(self.state.task_call[0..found_task_index].join(" "));
     }
 
     pub(crate) fn get_task_def(&mut self) -> Option<&dyn Command> {
@@ -661,7 +665,7 @@ mod tests {
         let nurfile_path = temp_dir.path().join(NUR_FILE);
         let mut nurfile = File::create(&nurfile_path).unwrap();
         nurfile
-            .write_all(b"def \"nur some-task\" [] {} ; def \"nur some-task sub-task\" [] {}")
+            .write_all(b"def \"nur some-task sub-task\" [] {}")
             .unwrap();
 
         nur_engine.load_env().unwrap();

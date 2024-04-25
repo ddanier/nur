@@ -117,7 +117,7 @@ fn main() -> Result<ExitCode, miette::ErrReport> {
     // Ensure we have a task name
     if nur_engine.state.task_name.is_none() {
         return Err(miette::ErrReport::from(NurError::TaskNotFound(
-            nur_engine.state.task_call[1].clone(),
+            nur_engine.state.task_call.join(" "),
         )));
     }
     #[cfg(feature = "debug")]
@@ -137,7 +137,7 @@ fn main() -> Result<ExitCode, miette::ErrReport> {
             std::process::exit(0);
         } else {
             return Err(miette::ErrReport::from(NurError::TaskNotFound(
-                nur_engine.state.task_name.clone().unwrap(),
+                nur_engine.state.task_call.join(" "),
             )));
         }
     }
