@@ -71,16 +71,23 @@ def "nur test-invalid-executable" [] {
     }
 }
 
-def "nur do-test-sub-task" [] { print "ok" }
-def "nur do-test-sub-task sub" [] { print "sub-ok" }
+def "nur do-sub-task" [] { print "ok" }
+def "nur do-sub-task sub" [] { print "sub-ok" }
 def "nur test-sub-task" [] {
-    std assert ((run-nur do-test-sub-task) == "ok")
-    std assert ((run-nur do-test-sub-task sub) == "sub-ok")
+    std assert ((run-nur do-sub-task) == "ok")
+    std assert ((run-nur do-sub-task sub) == "sub-ok")
 }
 
-def "nur do-test-sub-task-without-parent sub" [] { print "sub-ok" }
+def "nur do-sub-task-without-parent sub" [] { print "sub-ok" }
 def "nur test-sub-task-without-parent" [] {
-    std assert ((run-nur do-test-sub-task-without-parent sub) == "sub-ok")
+    std assert ((run-nur do-sub-task-without-parent sub) == "sub-ok")
+}
+
+def --wrapped "nur do-sub-task-with-any-args sub" [...args] { print "sub-ok" }
+def "nur test-sub-task-with-any-args" [] {
+    std assert ((run-nur do-sub-task-with-any-args sub) == "sub-ok")
+    std assert ((run-nur do-sub-task-with-any-args sub --foo bar bla) == "sub-ok")
+    std assert ((run-nur do-sub-task-with-any-args sub some random args) == "sub-ok")
 }
 
 # Utils and other commands
