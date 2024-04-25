@@ -351,10 +351,6 @@ def "nur something" [] {
 Like with normal `nu` shell commands `nur` can also handle sub commands and thus sub tasks.
 
 ```nu-script
-def "nur something" [] {
-    print "The main something task"
-}
-
 def "nur something sub" [] {
     print "The sub task to something"
 }
