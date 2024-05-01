@@ -130,7 +130,7 @@ def "nur upgrade-nu" [
 
     print ""
     print $"Storing version (ansi purple)($version)(ansi reset) in src/nu_version.rs as NU_VERSION constant"
-    $"pub\(crate) const NU_VERSION: &str = \"($version)\";" | save -f src/nu_version.rs
+    $"pub\(crate) const NU_VERSION: &str = \"($version)\";\n" | save -f src/nu_version.rs
 
     print ""
     print $"(ansi yellow)IMPORTANT: Please ensure all other packages are also upgraded accordingly:(ansi reset)"

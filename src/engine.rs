@@ -20,7 +20,7 @@ use nu_protocol::{
 use nu_std::load_standard_library;
 use nu_utils::stdout_write_all_and_flush;
 use std::fs;
-use std::path::Path;
+use std::path::{Path, PathBuf};
 use std::sync::Arc;
 
 pub(crate) fn init_engine_state<P: AsRef<Path>>(project_path: P) -> NurResult<EngineState> {
@@ -263,7 +263,7 @@ impl NurEngine {
         contents: String,
     ) -> NurResult<Arc<Block>> {
         if file_path.is_some() {
-            self.engine_state.start_in_file(file_path);
+            self.engine_state.file = Some(PathBuf::from(file_path.unwrap()));
         }
 
         let mut working_set = StateWorkingSet::new(&self.engine_state);
