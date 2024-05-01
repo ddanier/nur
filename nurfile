@@ -55,6 +55,15 @@ def "nur test-nur" [] {
     cargo run -- --quiet run-all
 }
 
+# Run one task for all enabled features to see those compile
+def "nur test-features" [] {
+    open Cargo.toml | get features | transpose key value | get key | each {
+        |it|
+        print $"Running 'nur hello ($it)' to check feature ($it)"
+        cargo run -F $it -- --quiet hello $it
+    }
+}
+
 # Run linter (clippy)
 def --wrapped "nur lint" [
     ...args
@@ -68,6 +77,8 @@ def "nur qa" [] {
     nur test
     print "Running nur tests"
     nur test-nur
+    print "Running feature tests"
+    nur test-features
     print "Running clippy linter"
     nur lint
     print "Running cargo check"
