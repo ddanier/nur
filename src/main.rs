@@ -122,7 +122,10 @@ fn main() -> Result<ExitCode, miette::ErrReport> {
     }
     #[cfg(feature = "debug")]
     if parsed_nur_args.debug_output {
-        eprintln!("full task name: {}", nur_engine.state.task_name.unwrap());
+        eprintln!(
+            "full task name: {}",
+            nur_engine.state.task_name.clone().unwrap()
+        );
     }
 
     // Handle help

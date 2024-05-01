@@ -55,6 +55,15 @@ def "nur test-nur" [] {
     cargo run -- --quiet run-all
 }
 
+# Run one task for all enabled features to see those compile
+def "nur test-features" [] {
+    open Cargo.toml | get features | transpose key value | get key | each {
+        |it|
+        print $"Running 'nur hello ($it)' to check feature ($it)"
+        cargo run -F $it -- --quiet hello $it
+    }
+}
+
 # Run linter (clippy)
 def --wrapped "nur lint" [
     ...args
@@ -68,6 +77,8 @@ def "nur qa" [] {
     nur test
     print "Running nur tests"
     nur test-nur
+    print "Running feature tests"
+    nur test-features
     print "Running clippy linter"
     nur lint
     print "Running cargo check"
@@ -130,14 +141,14 @@ def "nur upgrade-nu" [
 
     print ""
     print $"Storing version (ansi purple)($version)(ansi reset) in src/nu_version.rs as NU_VERSION constant"
-    $"pub\(crate) const NU_VERSION: &str = \"($version)\";" | save -f src/nu_version.rs
+    $"pub\(crate) const NU_VERSION: &str = \"($version)\";\n" | save -f src/nu_version.rs
 
     print ""
     print $"(ansi yellow)IMPORTANT: Please ensure all other packages are also upgraded accordingly:(ansi reset)"
-    print $" -> (ansi cyan)nu-ansi-term(ansi reset): needs to be the same version as used in (ansi cyan)nu-cmd-base(ansi reset)"
-    print $" -> (ansi cyan)miette(ansi reset): needs to be the same version as used in (ansi cyan)nu-cmd-base(ansi reset)"
-    print $" -> See nushell/Cargo.toml in section '[workspace.dependencies]' for details on used versions"
+    print $" -> (ansi cyan)nu-ansi-term(ansi reset): needs to be the same version as used in (ansi cyan)nu(ansi reset)"
+    print $" -> (ansi cyan)miette(ansi reset): needs to be the same version as used in (ansi cyan)nu(ansi reset)"
     print $" -> (ansi cyan)openssl(ansi reset): needs to be the same version as used in (ansi cyan)nu(ansi reset)"
+    print $" -> See nushell/Cargo.toml in section (ansi cyan)[workspace.dependencies](ansi reset) for details on used versions"
 }
 
 # Utility commands
