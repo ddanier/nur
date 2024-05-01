@@ -25,7 +25,7 @@ nu-parser = "0.93.0"
 nu-protocol = "0.93.0"
 nu-std = "0.93.0"
 nu-utils = "0.93.0"
-thiserror = "1.0.58"
+thiserror = "1.0.59"
 miette = { version = "7.2", features = ["fancy-no-backtrace", "fancy"] }
 nu-ansi-term = "0.50.0"
 
