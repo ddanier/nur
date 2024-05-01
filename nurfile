@@ -134,10 +134,10 @@ def "nur upgrade-nu" [
 
     print ""
     print $"(ansi yellow)IMPORTANT: Please ensure all other packages are also upgraded accordingly:(ansi reset)"
-    print $" -> (ansi cyan)nu-ansi-term(ansi reset): needs to be the same version as used in (ansi cyan)nu-cmd-base(ansi reset)"
-    print $" -> (ansi cyan)miette(ansi reset): needs to be the same version as used in (ansi cyan)nu-cmd-base(ansi reset)"
-    print $" -> See nushell/Cargo.toml in section '[workspace.dependencies]' for details on used versions"
+    print $" -> (ansi cyan)nu-ansi-term(ansi reset): needs to be the same version as used in (ansi cyan)nu(ansi reset)"
+    print $" -> (ansi cyan)miette(ansi reset): needs to be the same version as used in (ansi cyan)nu(ansi reset)"
     print $" -> (ansi cyan)openssl(ansi reset): needs to be the same version as used in (ansi cyan)nu(ansi reset)"
+    print $" -> See nushell/Cargo.toml in section (ansi cyan)[workspace.dependencies](ansi reset) for details on used versions"
 }
 
 # Utility commands
