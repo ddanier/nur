@@ -55,6 +55,8 @@ jobs:
 
       - name: Setup Nushell
         uses: hustcer/setup-nu@v3.10
+        with:
+          version: "*"
 
       - name: Build nur archive
         id: build
