@@ -415,6 +415,25 @@ You may also look into those `nu` topics:
 * [Builtin commands](https://www.nushell.sh/commands/)
 * [Modules](https://www.nushell.sh/book/modules.html)
 
+## Switching to `nur`
+
+Switching to `nur` on a large project or when having many projects can be some hassle. As of this the
+recommended workflow is:
+
+1. Create a `nurfile` including all the original tasks but still calling your old task runner  
+   (All devs can then either use the old task runner or `nur`)
+2. Gradually convert your tasks to be written in `nu` shell script inside the generated `nurfile`
+3. When everything is ready, remove the old task runner config and use `nur` from this day forward 👍
+
+To simplify this progress I have created a [`nurify`](scripts/nurify.nu) script to generate a `nurfile` from
+many existing task runners. You can use this to simplify the first step. `nurify` is written in `nu` shell script,
+so you need to use `nu` for this to work.
+
+Usage: Put `nurify.nu` into your `NU_LIB_DIRS`, for example by using `cp nurify.nu $env.NU_LIB_DIRS.0`. Then
+update your `nu` config script by adding `use nurify.nu` (you may use `vim $nu.config-path` to edit this file).
+
+*Pull requests to add additional task/command runners to `nurify` are very much welcome!*
+
 ## Why I built `nur` + some history
 
 For me `nur` is the next logical step after I created `b5`. `b5` is based on running bash code and
@@ -431,7 +450,8 @@ parse those, care about validation etc. Still the way `just` works is either to 
 by line (and not having any context between those commands) or define some script language to execute
 the full command (meaning using something like bash again). So `just` - at least for me - is a great
 step forward, but still not what I had in mind when creating `b5` and what I would like to do with a
-task runner.
+task runner. I think this also is the reason `just` calls itself a "command" runner and not a "task"
+runner.
 
 Then I came across `nu`, especially the nu shell. This did become my default shell after a while, and
 I am using it as of now. `nu` feels nicely designed, has a very structured way to execute commands and
