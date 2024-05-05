@@ -53,8 +53,8 @@ jobs:
           target: ${{ matrix.target }}
           rustflags: ''  # Keep, as otherwise the defaults will be used
 
-      - name: Setup Nushell
-        uses: hustcer/setup-nu@v3.10
+      - name: Setup nushell
+        uses: hustcer/setup-nu@v3
         with:
           version: "*"
 
