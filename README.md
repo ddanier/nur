@@ -434,13 +434,33 @@ update your `nu` config script by adding `use nurify.nu` (you may use `vim $nu.c
 
 *Pull requests to add additional task/command runners to `nurify` are very much welcome!*
 
+## Recommendations and best practices
+
+* Add the `nurfile` to git, allow each developer to extend the provided task by using a `nurfile.local` which
+  is ignored by your `.gitignore`
+* Provide some common tasks on each and every project, for me this would be something like:
+  - `nur install`: Setup the project, install all dependencies
+  - `nur update`: Ensure everything is up to date
+  - `nur run`: Start the project, might run a dev server
+  - `nur halt`: Stop the running project
+  - `nur test`: Run the tests
+  - `nur lint`: Run the linter
+  - `nur qa`: Run all QA jobs (like tests + linter)
+* On monorepos provide the same tasks for the whole project but also variants for the different components like
+  `nur backend test` and `nur frontend test` which will both be run by `nur test`
+* Use sub-tasks to group similar tasks. If you for example have tasks for exporting and importing the DB data
+  you may use `nur db export` and `nur db import`
+* Create tasks for all reoccurring tasks or tasks multiple people need to run
+* Add docs to task (/command) and use typing
+* Follow [nu shell guidelines](https://www.nushell.sh/book/style_guide.html) as well
+
 ## Why I built `nur` + some history
 
-For me `nur` is the next logical step after I created `b5`. `b5` is based on running bash code and
-allowing users to do this in a somewhat ordered matter. Initially `b5` even was just some bash script,
-but then eventually I figured bash is just not enough to handle my requirements. So I switched to
-using Python, but `b5` was still based on bash, as it would generate bash code and then just execute
-the code. One issue I always had with this approach was that again bash isn't that nice to write
+For me `nur` is the next logical step [after I created `b5`](https://medium.com/@david.danier/why-i-wrote-my-own-task-runner-twice-and-why-you-should-care-699d660be16d?postPublishedType=repub).
+`b5` is based on running bash code and allowing users to do this in a somewhat ordered matter. Initially `b5` 
+even was just some bash script, but then eventually I figured bash is just not enough to handle my requirements.
+So I switched to using Python, but `b5` was still based on bash, as it would generate bash code and then just
+execute the code. One issue I always had with this approach was that again bash isn't that nice to write
 complex things without introducing issues everywhere. Look for example at parameter handling.
 
 Then along came `just`, which did implement its own language you could use to write your `justfile`.
@@ -450,8 +470,8 @@ parse those, care about validation etc. Still the way `just` works is either to 
 by line (and not having any context between those commands) or define some script language to execute
 the full command (meaning using something like bash again). So `just` - at least for me - is a great
 step forward, but still not what I had in mind when creating `b5` and what I would like to do with a
-task runner. I think this also is the reason `just` calls itself a "command" runner and not a "task"
-runner.
+task runner. I think this also is the reason `just` calls itself a ["command" runner and not a "task"
+runner](https://medium.com/@david.danier/why-you-should-use-a-task-runner-and-not-a-command-runner-seriously-5efb56a6ec63).
 
 Then I came across `nu`, especially the nu shell. This did become my default shell after a while, and
 I am using it as of now. `nu` feels nicely designed, has a very structured way to execute commands and
