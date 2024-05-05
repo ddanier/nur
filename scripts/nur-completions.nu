@@ -9,6 +9,6 @@ export extern nur [
   --list  # List available tasks and then just exit
   --quiet  # Do not output anything but what the task produces
   --stdin  # Attach stdin to called nur task
-  task_name: string@"nu-complete nur task-names"  # Name of the task to run (optional)
+  task_name?: string@"nu-complete nur task-names"  # Name of the task to run (optional)
   ...args  # Parameters to the executed task
 ]
