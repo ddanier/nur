@@ -18,8 +18,8 @@ impl Command for Nur {
 
         signature = signature
             .usage("nur - a taskrunner based on nu shell.")
-            .switch("version", "output version number and exit", None)
-            .switch("list", "list available tasks and then just exit", None)
+            .switch("version", "Output version number and exit", None)
+            .switch("list", "List available tasks and then just exit", None)
             .switch(
                 "quiet",
                 "Do not output anything but what the task produces",
@@ -28,13 +28,13 @@ impl Command for Nur {
             .switch("stdin", "Attach stdin to called nur task", None)
             .optional(
                 "task name",
-                SyntaxShape::Filepath,
-                "name of the task to run",
+                SyntaxShape::String,
+                "Name of the task to run (you may use sub tasks)",
             )
             .rest(
                 "task args",
                 SyntaxShape::String,
-                "parameters to the executed task",
+                "Parameters for the executed task",
             )
             .category(Category::Default);
 
