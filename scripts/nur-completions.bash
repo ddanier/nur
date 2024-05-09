@@ -30,9 +30,10 @@ _comp_cmd_nur()
             COMPREPLY=( $( compgen -W "${opts}" -- "${cur}" ) )
             return 0
         else
-            local tasks=$( nur --list )
-            local tasks=$( printf "%s\t" $tasks )
-            COMPREPLY=( $( compgen -W "${tasks}" -- "${cur}" ) )
+            local tasks
+            IFS=$'\n' tasks=$( nur --list )
+            local tasks_string=$( printf "%s\t" "${tasks[@]}" )
+            COMPREPLY=( $( compgen -W "${tasks_string}" -- "${cur}" ) )
         fi
     else
         COMPREPLY=("FUCK")
