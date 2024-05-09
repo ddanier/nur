@@ -96,7 +96,8 @@ fn main() -> Result<ExitCode, miette::ErrReport> {
             | get name 
             | each { |it| $it | str substring 4.. } 
             | sort 
-            | table --theme none --index false"#,
+            | each { |it| print $it };
+            null"#,
             PipelineData::empty(),
         )?;
 
