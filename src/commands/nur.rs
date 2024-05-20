@@ -18,14 +18,25 @@ impl Command for Nur {
 
         signature = signature
             .usage("nur - a taskrunner based on nu shell.")
-            .switch("version", "Output version number and exit", None)
-            .switch("list", "List available tasks and then just exit", None)
+            .switch("version", "Output version number and exit", Some('v'))
+            .switch("list", "List available tasks and then just exit", Some('l'))
             .switch(
                 "quiet",
                 "Do not output anything but what the task produces",
                 None,
             )
             .switch("stdin", "Attach stdin to called nur task", None)
+            .named(
+                "commands",
+                SyntaxShape::String,
+                "run the given commands and then exit",
+                Some('c'),
+            )
+            .switch(
+                "enter-shell",
+                "enter nu shell with nur being setup (use this for debugging)",
+                Some('e'),
+            )
             .optional(
                 "task name",
                 SyntaxShape::String,
@@ -40,7 +51,7 @@ impl Command for Nur {
 
         #[cfg(feature = "debug")]
         {
-            signature = signature.switch("debug", "Show debug details", None);
+            signature = signature.switch("debug", "Show debug details", Some('d'));
         }
 
         signature
