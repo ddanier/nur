@@ -23,19 +23,19 @@ impl Command for Nur {
             .switch(
                 "quiet",
                 "Do not output anything but what the task produces",
-                None,
+                Some('q'),
             )
             .switch("stdin", "Attach stdin to called nur task", None)
             .named(
                 "commands",
                 SyntaxShape::String,
-                "run the given commands and then exit",
+                "Run the given commands after nurfiles have been loaded",
                 Some('c'),
             )
             .switch(
                 "enter-shell",
-                "enter nu shell with nur being setup (use this for debugging)",
-                Some('e'),
+                "Enter a nu REPL shell after the nurfiles have been loaded (use only for debugging)",
+                None,
             )
             .optional(
                 "task name",
