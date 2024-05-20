@@ -106,27 +106,16 @@ fn main() -> Result<ExitCode, miette::ErrReport> {
 
     // Show help if no task call was found
     // (error exit if --help was not passed)
-    if !nur_engine.state.has_task_call {
+    if !nur_engine.state.has_task_call
+        && parsed_nur_args.run_commands.is_none()
+        && !parsed_nur_args.enter_shell
+    {
         nur_engine.print_help(&Nur);
         if parsed_nur_args.show_help {
             std::process::exit(0);
         } else {
             std::process::exit(1);
         }
-    }
-
-    // Ensure we have a task name
-    if nur_engine.state.task_name.is_none() {
-        return Err(miette::ErrReport::from(NurError::TaskNotFound(
-            nur_engine.state.task_call.join(" "),
-        )));
-    }
-    #[cfg(feature = "debug")]
-    if parsed_nur_args.debug_output {
-        eprintln!(
-            "full task name: {}",
-            nur_engine.state.task_name.clone().unwrap()
-        );
     }
 
     // Handle help
@@ -170,13 +159,22 @@ fn main() -> Result<ExitCode, miette::ErrReport> {
 
     // Execute the task
     let exit_code: i64;
-    let full_task_call = nur_engine.state.task_call.join(" ");
+    let run_command = if parsed_nur_args.run_commands.is_some() {
+        parsed_nur_args.run_commands.clone().unwrap().item
+    } else {
+        nur_engine.state.task_call.join(" ")
+    };
     #[cfg(feature = "debug")]
     if parsed_nur_args.debug_output {
-        eprintln!("full task call: {}", full_task_call);
+        eprintln!("full command call: {}", run_command);
     }
-    if parsed_nur_args.quiet_execution {
-        exit_code = nur_engine.eval_and_print(full_task_call, input)?;
+    if parsed_nur_args.enter_shell {
+        exit_code = match nur_engine.run_repl() {
+            Ok(_) => 0,
+            Err(_) => 1,
+        }
+    } else if parsed_nur_args.quiet_execution {
+        exit_code = nur_engine.eval_and_print(run_command, input)?;
 
         #[cfg(feature = "debug")]
         if parsed_nur_args.debug_output {
@@ -188,9 +186,13 @@ fn main() -> Result<ExitCode, miette::ErrReport> {
             "Project path: {}",
             nur_engine.state.project_path.to_str().unwrap()
         );
-        println!("Executing task: {}", nur_engine.get_short_task_name());
+        if parsed_nur_args.run_commands.is_some() {
+            println!("Running command: {}", run_command);
+        } else {
+            println!("Executing task: {}", nur_engine.get_short_task_name());
+        }
         println!();
-        exit_code = nur_engine.eval_and_print(full_task_call, input)?;
+        exit_code = nur_engine.eval_and_print(run_command, input)?;
         #[cfg(feature = "debug")]
         if parsed_nur_args.debug_output {
             println!("Exit code {:?}", exit_code);
@@ -211,12 +213,13 @@ fn main() -> Result<ExitCode, miette::ErrReport> {
             );
         } else {
             println!(
-                "{}Task execution failed{}",
+                "{}Task execution failed (exit code: {}){}",
                 if use_color {
                     Color::Red.prefix().to_string()
                 } else {
                     String::from("")
                 },
+                exit_code,
                 if use_color {
                     Color::Red.suffix().to_string()
                 } else {

@@ -33,6 +33,10 @@ pub enum NurError {
     #[error("Could not find nurfile in path and parents")]
     #[diagnostic()]
     NurfileNotFound(),
+
+    #[error("Entered shell did raise an error")]
+    #[diagnostic()]
+    EnteredShellError(),
 }
 
 impl From<std::io::Error> for NurError {

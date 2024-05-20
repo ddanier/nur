@@ -2,21 +2,22 @@ use crate::commands::Nur;
 use crate::errors::{NurError, NurResult};
 use crate::names::NUR_NAME;
 use nu_engine::{get_full_help, CallExt};
-use nu_parser::escape_for_script_arg;
 use nu_parser::parse;
-use nu_protocol::report_error;
+use nu_parser::{escape_for_script_arg, escape_quote_string};
+use nu_protocol::ast::Expression;
 use nu_protocol::{
     ast::Expr,
     engine::{Command, EngineState, Stack, StateWorkingSet},
     ShellError,
 };
+use nu_protocol::{report_error, Spanned};
 use nu_utils::stdout_write_all_and_flush;
 
 pub(crate) fn is_safe_taskname(name: &str) -> bool {
     // This is basically similar to string_should_be_quoted
     // in nushell/crates/nu-parser/src/deparse.rs:1,
     // BUT may change as the requirements are different.
-    // Also I added "#" and "^", as seem in
+    // Also I added "#" and "^", as seen in
     // nushell/crates/nu-parser/src/parse_keywords.rs:175
     !name.starts_with('$')
         && !(name.chars().any(|c| {
@@ -55,16 +56,17 @@ pub(crate) fn gather_commandline_args(
             break;
         }
 
-        // let flag_value = match arg.as_ref() {
-        //     // "--some-file" => args.next().map(|a| escape_quote_string(&a)),
-        //     _ => None,
-        // };
+        let flag_value = match arg.as_ref() {
+            // "--some-file" => args.next().map(|a| escape_quote_string(&a)),
+            "--commands" | "-c" => args_iter.next().map(|a| escape_quote_string(a)),
+            _ => None,
+        };
 
         args_to_nur.push(arg.clone());
 
-        // if let Some(flag_value) = flag_value {
-        //     args_to_nur.push(flag_value);
-        // }
+        if let Some(flag_value) = flag_value {
+            args_to_nur.push(flag_value);
+        }
     }
 
     if has_task_call {
@@ -105,11 +107,13 @@ pub(crate) fn parse_commandline_args(
     // We should have a successful parse now
     if let Some(pipeline) = block.pipelines.first() {
         if let Some(Expr::Call(call)) = pipeline.elements.first().map(|e| &e.expr.expr) {
-            // let config_file = call.get_flag_expr("config");
+            // let config_file = call.get_flag_expr("some-flag");
             let list_tasks = call.has_flag(engine_state, &mut stack, "list")?;
             let quiet_execution = call.has_flag(engine_state, &mut stack, "quiet")?;
             let attach_stdin = call.has_flag(engine_state, &mut stack, "stdin")?;
             let show_help = call.has_flag(engine_state, &mut stack, "help")?;
+            let run_commands = call.get_flag_expr("commands");
+            let enter_shell = call.has_flag(engine_state, &mut stack, "enter-shell")?;
             #[cfg(feature = "debug")]
             let debug_output = call.has_flag(engine_state, &mut stack, "debug")?;
 
@@ -122,11 +126,36 @@ pub(crate) fn parse_commandline_args(
                 std::process::exit(0);
             }
 
+            fn extract_contents(
+                expression: Option<&Expression>,
+            ) -> Result<Option<Spanned<String>>, ShellError> {
+                if let Some(expr) = expression {
+                    let str = expr.as_string();
+                    if let Some(str) = str {
+                        Ok(Some(Spanned {
+                            item: str,
+                            span: expr.span,
+                        }))
+                    } else {
+                        Err(ShellError::TypeMismatch {
+                            err_message: "string".into(),
+                            span: expr.span,
+                        })
+                    }
+                } else {
+                    Ok(None)
+                }
+            }
+
+            let run_commands = extract_contents(run_commands)?;
+
             return Ok(NurArgs {
                 list_tasks,
                 quiet_execution,
                 attach_stdin,
                 show_help,
+                run_commands,
+                enter_shell,
                 #[cfg(feature = "debug")]
                 debug_output,
             });
@@ -151,6 +180,8 @@ pub(crate) struct NurArgs {
     pub(crate) quiet_execution: bool,
     pub(crate) attach_stdin: bool,
     pub(crate) show_help: bool,
+    pub(crate) run_commands: Option<Spanned<String>>,
+    pub(crate) enter_shell: bool,
     #[cfg(feature = "debug")]
     pub(crate) debug_output: bool,
 }
@@ -257,6 +288,8 @@ mod tests {
         assert_eq!(nur_args.quiet_execution, false);
         assert_eq!(nur_args.attach_stdin, false);
         assert_eq!(nur_args.show_help, false);
+        assert!(nur_args.run_commands.is_none());
+        assert_eq!(nur_args.enter_shell, false);
     }
 
     #[test]
@@ -265,9 +298,6 @@ mod tests {
 
         let nur_args = parse_commandline_args("nur --list", &mut engine_state).unwrap();
         assert_eq!(nur_args.list_tasks, true);
-        assert_eq!(nur_args.quiet_execution, false);
-        assert_eq!(nur_args.attach_stdin, false);
-        assert_eq!(nur_args.show_help, false);
     }
 
     #[test]
@@ -275,10 +305,7 @@ mod tests {
         let mut engine_state = _create_minimal_engine_for_erg_parsing();
 
         let nur_args = parse_commandline_args("nur --quiet", &mut engine_state).unwrap();
-        assert_eq!(nur_args.list_tasks, false);
         assert_eq!(nur_args.quiet_execution, true);
-        assert_eq!(nur_args.attach_stdin, false);
-        assert_eq!(nur_args.show_help, false);
     }
 
     #[test]
@@ -286,10 +313,7 @@ mod tests {
         let mut engine_state = _create_minimal_engine_for_erg_parsing();
 
         let nur_args = parse_commandline_args("nur --stdin", &mut engine_state).unwrap();
-        assert_eq!(nur_args.list_tasks, false);
-        assert_eq!(nur_args.quiet_execution, false);
         assert_eq!(nur_args.attach_stdin, true);
-        assert_eq!(nur_args.show_help, false);
     }
 
     #[test]
@@ -297,9 +321,24 @@ mod tests {
         let mut engine_state = _create_minimal_engine_for_erg_parsing();
 
         let nur_args = parse_commandline_args("nur --help", &mut engine_state).unwrap();
-        assert_eq!(nur_args.list_tasks, false);
-        assert_eq!(nur_args.quiet_execution, false);
-        assert_eq!(nur_args.attach_stdin, false);
         assert_eq!(nur_args.show_help, true);
+    }
+
+    #[test]
+    fn test_parse_commandline_args_commands() {
+        let mut engine_state = _create_minimal_engine_for_erg_parsing();
+
+        let nur_args =
+            parse_commandline_args("nur --commands 'some_command'", &mut engine_state).unwrap();
+        assert!(nur_args.run_commands.is_some());
+        assert_eq!(nur_args.run_commands.unwrap().item, "some_command");
+    }
+
+    #[test]
+    fn test_parse_commandline_args_enter_shell() {
+        let mut engine_state = _create_minimal_engine_for_erg_parsing();
+
+        let nur_args = parse_commandline_args("nur --enter-shell", &mut engine_state).unwrap();
+        assert_eq!(nur_args.enter_shell, true);
     }
 }

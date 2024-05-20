@@ -90,6 +90,11 @@ def "nur test-sub-task-with-any-args" [] {
     std assert ((run-nur do-sub-task-with-any-args sub some random args) == "sub-ok")
 }
 
+def "nur test-running-commands" [] {
+    std assert ((run-nur --commands "print 'ok'") == "ok")
+    std assert ((run-nur --commands "print $nurcmd") == $nurcmd)
+}
+
 # Utils and other commands
 
 def is-windows [] {
