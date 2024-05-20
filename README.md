@@ -384,6 +384,24 @@ def "nur hello" [] {
 
 I recommend reading about [`nu` modules](https://www.nushell.sh/book/modules.html) in the official `nu` documentation.
 
+### Low level `nur` usage
+
+When using your own commands as utilities and maybe even pack those into modules it may come in handy to
+run those commands one by one - either for debugging or to just get some small portion of your `nurfile`
+run in rare occasions.
+
+Do to this via your shell you can use `--commands`/`-c`, given the command `some-helper` from above you can
+for example only run this command by using `nur -c "some-helper"`. I personally sometimes use this to only
+run certain parts of my install/setup tasks to speed things up. Of course you only should ever do this when you
+absolutely know what you are doing.
+
+If you feel even more adventurous you may use `nur --enter-shell` to open up the `nu` shell powering `nur`
+with everything initializes. This is particularly useful for debugging your `nurfile` and should not be used
+for anything else. Note the shell will not use your normal `nu` shell setup, if you are using `nu` shell yourself
+outside of `nur`. This is due to the fact that `nur` will - by design - not read your global `env.nu` and
+`config.nu` to ensure `nur` works the same on every devs machine. Instead those files will only be project
+specific, see below.
+
 ### Provide `env.nu` and `config.nu` for project specific setup
 
 Like [with `nu`](https://www.nushell.sh/book/configuration.html) you can have your own environment
