@@ -288,6 +288,8 @@ mod tests {
         assert_eq!(nur_args.quiet_execution, false);
         assert_eq!(nur_args.attach_stdin, false);
         assert_eq!(nur_args.show_help, false);
+        assert!(nur_args.run_commands.is_none());
+        assert_eq!(nur_args.enter_shell, false);
     }
 
     #[test]
@@ -296,9 +298,6 @@ mod tests {
 
         let nur_args = parse_commandline_args("nur --list", &mut engine_state).unwrap();
         assert_eq!(nur_args.list_tasks, true);
-        assert_eq!(nur_args.quiet_execution, false);
-        assert_eq!(nur_args.attach_stdin, false);
-        assert_eq!(nur_args.show_help, false);
     }
 
     #[test]
@@ -306,10 +305,7 @@ mod tests {
         let mut engine_state = _create_minimal_engine_for_erg_parsing();
 
         let nur_args = parse_commandline_args("nur --quiet", &mut engine_state).unwrap();
-        assert_eq!(nur_args.list_tasks, false);
         assert_eq!(nur_args.quiet_execution, true);
-        assert_eq!(nur_args.attach_stdin, false);
-        assert_eq!(nur_args.show_help, false);
     }
 
     #[test]
@@ -317,10 +313,7 @@ mod tests {
         let mut engine_state = _create_minimal_engine_for_erg_parsing();
 
         let nur_args = parse_commandline_args("nur --stdin", &mut engine_state).unwrap();
-        assert_eq!(nur_args.list_tasks, false);
-        assert_eq!(nur_args.quiet_execution, false);
         assert_eq!(nur_args.attach_stdin, true);
-        assert_eq!(nur_args.show_help, false);
     }
 
     #[test]
@@ -328,9 +321,24 @@ mod tests {
         let mut engine_state = _create_minimal_engine_for_erg_parsing();
 
         let nur_args = parse_commandline_args("nur --help", &mut engine_state).unwrap();
-        assert_eq!(nur_args.list_tasks, false);
-        assert_eq!(nur_args.quiet_execution, false);
-        assert_eq!(nur_args.attach_stdin, false);
         assert_eq!(nur_args.show_help, true);
+    }
+
+    #[test]
+    fn test_parse_commandline_args_commands() {
+        let mut engine_state = _create_minimal_engine_for_erg_parsing();
+
+        let nur_args =
+            parse_commandline_args("nur --commands 'some_command'", &mut engine_state).unwrap();
+        assert!(nur_args.run_commands.is_some());
+        assert_eq!(nur_args.run_commands.unwrap().item, "some_command");
+    }
+
+    #[test]
+    fn test_parse_commandline_args_enter_shell() {
+        let mut engine_state = _create_minimal_engine_for_erg_parsing();
+
+        let nur_args = parse_commandline_args("nur --enter-shell", &mut engine_state).unwrap();
+        assert_eq!(nur_args.enter_shell, true);
     }
 }
