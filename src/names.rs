@@ -22,3 +22,6 @@ pub(crate) const NUR_VAR_DEFAULT_LIB_DIR: &str = "default-lib-dir";
 // nurfile names
 pub(crate) const NUR_FILE: &str = "nurfile";
 pub(crate) const NUR_LOCAL_FILE: &str = "nurfile.local";
+
+// nu shell consts
+pub(crate) const NUSHELL_FOLDER: &str = "nushell"; // nu-cli -> config_files.rs

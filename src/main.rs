@@ -168,7 +168,12 @@ fn main() -> Result<ExitCode, miette::ErrReport> {
     if parsed_nur_args.debug_output {
         eprintln!("full command call: {}", run_command);
     }
-    if parsed_nur_args.quiet_execution {
+    if parsed_nur_args.enter_shell {
+        exit_code = match nur_engine.run_repl() {
+            Ok(_) => 0,
+            Err(_) => 1,
+        }
+    } else if parsed_nur_args.quiet_execution {
         exit_code = nur_engine.eval_and_print(run_command, input)?;
 
         #[cfg(feature = "debug")]

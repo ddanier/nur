@@ -1,14 +1,15 @@
 use crate::args::{is_safe_taskname, parse_commandline_args, NurArgs};
+use crate::errors::NurError::EnteredShellError;
 use crate::errors::{NurError, NurResult};
 use crate::names::{
     NUR_ENV_NUR_TASK_CALL, NUR_ENV_NUR_TASK_NAME, NUR_ENV_NUR_VERSION, NUR_ENV_NU_LIB_DIRS,
     NUR_NAME, NUR_VAR_CONFIG_DIR, NUR_VAR_DEFAULT_LIB_DIR, NUR_VAR_PROJECT_PATH, NUR_VAR_RUN_PATH,
-    NUR_VAR_TASK_NAME,
+    NUR_VAR_TASK_NAME, NUSHELL_FOLDER,
 };
 use crate::nu_version::NU_VERSION;
 use crate::scripts::{get_default_nur_config, get_default_nur_env};
 use crate::state::NurState;
-use nu_cli::gather_parent_env_vars;
+use nu_cli::{evaluate_repl, gather_parent_env_vars};
 use nu_engine::get_full_help;
 use nu_protocol::ast::Block;
 use nu_protocol::engine::{Command, Stack, StateWorkingSet};
@@ -419,6 +420,20 @@ impl NurEngine {
         );
 
         let _ = std::panic::catch_unwind(move || stdout_write_all_and_flush(full_help));
+    }
+
+    pub(crate) fn run_repl(&mut self) -> NurResult<()> {
+        match evaluate_repl(
+            &mut self.engine_state,
+            self.stack.clone(),
+            NUSHELL_FOLDER,
+            None,
+            None,
+            std::time::Instant::now(),
+        ) {
+            Ok(_) => Ok(()),
+            Err(_) => Err(EnteredShellError()),
+        }
     }
 }
 
