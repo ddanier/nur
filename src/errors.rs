@@ -37,6 +37,10 @@ pub enum NurError {
     #[error("Entered shell did raise an error")]
     #[diagnostic()]
     EnteredShellError(),
+
+    #[error("You cannot use {0} and {1} together")]
+    #[diagnostic()]
+    InvalidNurCall(String, String),
 }
 
 impl From<std::io::Error> for NurError {

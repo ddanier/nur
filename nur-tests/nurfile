@@ -95,10 +95,31 @@ def "nur test-running-commands" [] {
     std assert ((run-nur --commands "print $nurcmd") == $nurcmd)
 }
 
+def "nur test-invalid-calls" [] {
+    assert exit-code { run-nur non-existing-task o+e>| ignore } 1
+    assert exit-code { run-nur --commands some-command some-task-name o+e>| ignore } 1
+    assert exit-code { run-nur --enter-shell some-task-name o+e>| ignore } 1
+    assert exit-code { run-nur --commands some-command --enter-shell o+e>| ignore } 1
+}
+
 # Utils and other commands
 
 def is-windows [] {
     $nu.os-info.name == 'windows'
+}
+
+def "assert exit-code" [
+    code: closure,
+    exit_code: int,
+] {
+    try { do $code } catch { null }
+    std assert ($env.LAST_EXIT_CODE == $exit_code) $"Expected exit code ($exit_code), but got ($env.LAST_EXIT_CODE)" --error-label {
+        span: {
+            start: (metadata $code).span.start
+            end: (metadata $code).span.end
+        }
+        text: $"Did not return expected exit code ($exit_code)"
+    }
 }
 
 def --wrapped run-nur [

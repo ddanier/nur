@@ -135,6 +135,31 @@ fn main() -> Result<ExitCode, miette::ErrReport> {
         }
     }
 
+    // Ensure we only allow sane calls
+    if nur_engine.state.has_task_call && parsed_nur_args.run_commands.is_some() {
+        return Err(miette::ErrReport::from(NurError::InvalidNurCall(
+            String::from("task call"),
+            String::from("--commands/-c"),
+        )));
+    }
+    if nur_engine.state.has_task_call && parsed_nur_args.enter_shell {
+        return Err(miette::ErrReport::from(NurError::InvalidNurCall(
+            String::from("task call"),
+            String::from("--enter-shell"),
+        )));
+    }
+    if parsed_nur_args.run_commands.is_some() && parsed_nur_args.enter_shell {
+        return Err(miette::ErrReport::from(NurError::InvalidNurCall(
+            String::from("--commands/-c"),
+            String::from("--enter-shell"),
+        )));
+    }
+    if nur_engine.state.has_task_call && nur_engine.state.task_name.is_none() {
+        return Err(miette::ErrReport::from(NurError::TaskNotFound(
+            nur_engine.state.task_call.join(" "),
+        )));
+    }
+
     // Prepare input data - if requested
     let input = if parsed_nur_args.attach_stdin {
         let stdin = std::io::stdin();
