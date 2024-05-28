@@ -33,9 +33,10 @@ nu-ansi-term = "0.50.0"
 openssl = { version = "0.10", features = ["vendored"], optional = true }
 
 [features]
-default = []
+default = ["which-support"]
 dataframe = ["dep:nu-cmd-dataframe", "nu-cmd-dataframe/dataframe", "nu-cmd-lang/dataframe"]
 static-link-openssl = ["dep:openssl", "nu-cmd-lang/static-link-openssl"]
+which-support = ["nu-command/which-support", "nu-cmd-lang/which-support"]
 debug = []
 
 [dev-dependencies]
