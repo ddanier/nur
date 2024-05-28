@@ -68,11 +68,7 @@ impl Command for Nur {
         call: &Call,
         _input: PipelineData,
     ) -> Result<PipelineData, ShellError> {
-        Ok(Value::string(
-            get_full_help(&Nur.signature(), &Nur.examples(), engine_state, stack, true),
-            call.head,
-        )
-        .into_pipeline_data())
+        Ok(Value::string(get_full_help(&Nur, engine_state, stack), call.head).into_pipeline_data())
     }
 
     fn examples(&self) -> Vec<Example> {

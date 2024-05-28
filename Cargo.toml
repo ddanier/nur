@@ -13,18 +13,17 @@ keywords = ["nu", "taskrunner", "development", "command-line"]
 categories = ["command-line-utilities", "development-tools"]
 
 [dependencies]
-nu-cli = "0.93.0"
-nu-cmd-base = "0.93.0"
-nu-cmd-dataframe = { version = "0.93.0", optional = true }
-nu-cmd-extra = "0.93.0"
-nu-cmd-lang = "0.93.0"
-nu-command = "0.93.0"
-nu-engine = "0.93.0"
-nu-explore = "0.93.0"
-nu-parser = "0.93.0"
-nu-protocol = "0.93.0"
-nu-std = "0.93.0"
-nu-utils = "0.93.0"
+nu-cli = "0.94.0"
+nu-cmd-base = "0.94.0"
+nu-cmd-extra = "0.94.0"
+nu-cmd-lang = "0.94.0"
+nu-command = "0.94.0"
+nu-engine = "0.94.0"
+nu-explore = "0.94.0"
+nu-parser = "0.94.0"
+nu-protocol = "0.94.0"
+nu-std = "0.94.0"
+nu-utils = "0.94.0"
 thiserror = "1.0.59"
 miette = { version = "7.2", features = ["fancy-no-backtrace", "fancy"] }
 nu-ansi-term = "0.50.0"
@@ -34,7 +33,6 @@ openssl = { version = "0.10", features = ["vendored"], optional = true }
 
 [features]
 default = ["which-support"]
-dataframe = ["dep:nu-cmd-dataframe", "nu-cmd-dataframe/dataframe", "nu-cmd-lang/dataframe"]
 static-link-openssl = ["dep:openssl", "nu-cmd-lang/static-link-openssl"]
 which-support = ["nu-command/which-support", "nu-cmd-lang/which-support"]
 debug = []
