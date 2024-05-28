@@ -18,9 +18,8 @@ use crate::state::NurState;
 use miette::Result;
 use nu_ansi_term::Color;
 use nu_cmd_base::util::get_init_cwd;
-use nu_protocol::{BufferedReader, PipelineData, RawStream, Span};
+use nu_protocol::{ByteStream, PipelineData, Span};
 use std::env;
-use std::io::BufReader;
 use std::process::ExitCode;
 
 fn main() -> Result<ExitCode, miette::ErrReport> {
@@ -162,28 +161,13 @@ fn main() -> Result<ExitCode, miette::ErrReport> {
 
     // Prepare input data - if requested
     let input = if parsed_nur_args.attach_stdin {
-        let stdin = std::io::stdin();
-        let buf_reader = BufReader::new(stdin);
-
-        PipelineData::ExternalStream {
-            stdout: Some(RawStream::new(
-                Box::new(BufferedReader::new(buf_reader)),
-                None,
-                Span::unknown(),
-                None,
-            )),
-            stderr: None,
-            exit_code: None,
-            span: Span::unknown(),
-            metadata: None,
-            trim_end_newline: false,
-        }
+        PipelineData::ByteStream(ByteStream::stdin(Span::unknown())?, None)
     } else {
         PipelineData::empty()
     };
 
     // Execute the task
-    let exit_code: i64;
+    let exit_code: i32;
     let run_command = if parsed_nur_args.run_commands.is_some() {
         parsed_nur_args.run_commands.clone().unwrap().item
     } else {

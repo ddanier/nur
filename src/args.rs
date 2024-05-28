@@ -7,7 +7,7 @@ use nu_parser::{escape_for_script_arg, escape_quote_string};
 use nu_protocol::ast::Expression;
 use nu_protocol::{
     ast::Expr,
-    engine::{Command, EngineState, Stack, StateWorkingSet},
+    engine::{EngineState, Stack, StateWorkingSet},
     ShellError,
 };
 use nu_protocol::{report_error, Spanned};
@@ -163,13 +163,7 @@ pub(crate) fn parse_commandline_args(
     }
 
     // Just give the help and exit if the above fails
-    let full_help = get_full_help(
-        &Nur.signature(),
-        &Nur.examples(),
-        engine_state,
-        &mut stack,
-        true,
-    );
+    let full_help = get_full_help(&Nur, engine_state, &mut stack);
     print!("{full_help}");
     std::process::exit(1);
 }

@@ -13,10 +13,8 @@ use nu_cli::{evaluate_repl, gather_parent_env_vars};
 use nu_engine::get_full_help;
 use nu_protocol::ast::Block;
 use nu_protocol::engine::{Command, Stack, StateWorkingSet};
-use nu_protocol::eval_const::create_nu_constant;
 use nu_protocol::{
     engine::EngineState, report_error, report_error_new, PipelineData, Record, Span, Type, Value,
-    NU_VARIABLE_ID,
 };
 use nu_std::load_standard_library;
 use nu_utils::stdout_write_all_and_flush;
@@ -101,13 +99,9 @@ impl NurEngine {
         self.engine_state
             .set_config_path("config-path", self.state.config_path.clone());
 
-        // Set up the $nu constant before evaluating any files (need to have $nu available in them)
-        let nu_const = create_nu_constant(
-            &self.engine_state,
-            PipelineData::empty().span().unwrap_or_else(Span::unknown),
-        )?;
-        self.engine_state
-            .set_variable_const_val(NU_VARIABLE_ID, nu_const);
+        // Set up the $nu constant before evaluating any files
+        // (those may need to have $nu available to execute them)
+        self.engine_state.generate_nu_constant();
 
         // Set up the $nur constant record (like $nu)
         let mut nur_record = Record::new();
@@ -305,7 +299,7 @@ impl NurEngine {
         input: PipelineData,
         print: bool,
         merge_env: bool,
-    ) -> NurResult<i64> {
+    ) -> NurResult<i32> {
         let str_contents = contents.to_string();
 
         if str_contents.is_empty() {
@@ -318,7 +312,7 @@ impl NurEngine {
 
         // Merge env is requested
         if merge_env {
-            match nu_engine::env::current_dir(&self.engine_state, &self.stack) {
+            match self.engine_state.cwd(Some(&self.stack)) {
                 Ok(cwd) => {
                     if let Err(e) = self.engine_state.merge_env(&mut self.stack, cwd) {
                         let working_set = StateWorkingSet::new(&self.engine_state);
@@ -334,29 +328,23 @@ impl NurEngine {
 
         // Print result is requested
         if print {
-            let exit_code = result.print(&self.engine_state, &mut self.stack, false, false)?;
-            Ok(exit_code)
-        } else {
-            if let PipelineData::ExternalStream {
-                exit_code: Some(exit_code),
-                ..
-            } = result
-            {
-                let mut exit_codes: Vec<_> = exit_code.into_iter().collect();
-                return match exit_codes.pop() {
-                    #[cfg(unix)]
-                    Some(Value::Error { error, .. }) => Err(NurError::from(*error)),
-                    Some(Value::Int { val, .. }) => Ok(val),
-                    _ => Ok(0),
-                };
+            let exit_details = result.print(&self.engine_state, &mut self.stack, false, false)?;
+            match exit_details {
+                Some(exit_status) => Ok(exit_status.code()),
+                None => Ok(0),
             }
+        } else {
+            if let Some(exit_status) = result.drain()? {
+                return Ok(exit_status.code());
+            }
+
             Ok(0)
         }
     }
 
     // This is used in tests only currently
     #[allow(dead_code)]
-    pub fn eval<S: ToString>(&mut self, contents: S, input: PipelineData) -> NurResult<i64> {
+    pub fn eval<S: ToString>(&mut self, contents: S, input: PipelineData) -> NurResult<i32> {
         self._eval(None, contents, input, false, false)
     }
 
@@ -364,7 +352,7 @@ impl NurEngine {
         &mut self,
         contents: S,
         input: PipelineData,
-    ) -> NurResult<i64> {
+    ) -> NurResult<i32> {
         self._eval(None, contents, input, true, false)
     }
 
@@ -372,7 +360,7 @@ impl NurEngine {
         &mut self,
         contents: S,
         input: PipelineData,
-    ) -> NurResult<i64> {
+    ) -> NurResult<i32> {
         self._eval(None, contents, input, false, true)
     }
 
@@ -380,7 +368,7 @@ impl NurEngine {
         &mut self,
         file_path: P,
         input: PipelineData,
-    ) -> NurResult<i64> {
+    ) -> NurResult<i32> {
         let contents = fs::read_to_string(&file_path)?;
 
         self._eval(file_path.as_ref().to_str(), contents, input, false, false)
@@ -390,7 +378,7 @@ impl NurEngine {
         &mut self,
         file_path: P,
         input: PipelineData,
-    ) -> NurResult<i64> {
+    ) -> NurResult<i32> {
         let contents = fs::read_to_string(&file_path)?;
 
         self._eval(file_path.as_ref().to_str(), contents, input, false, true)
@@ -411,13 +399,7 @@ impl NurEngine {
     }
 
     pub(crate) fn print_help(&mut self, command: &dyn Command) {
-        let full_help = get_full_help(
-            &command.signature(),
-            &command.examples(),
-            &self.engine_state,
-            &mut self.stack,
-            true,
-        );
+        let full_help = get_full_help(command, &self.engine_state, &mut self.stack);
 
         let _ = std::panic::catch_unwind(move || stdout_write_all_and_flush(full_help));
     }
