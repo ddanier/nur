@@ -42,7 +42,7 @@ def nurify-from-just [] {
         | get recipes
         | transpose k v
         | each {
-            |it| $"def --wrapped \"nur ($it.k)\" [...args] {\n    ^just --quiet \"($it.k)\" ...$args\n}\n"
+            |it| $"def --wrapped \"nur ($it.k)\" [...args] {\n    ^just \"($it.k)\" ...$args\n}\n"
         }  | save -f -a nurfile
 }
 
