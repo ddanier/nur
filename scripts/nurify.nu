@@ -107,6 +107,10 @@ def nurify-from-tusk [] {
 # * b5 task runner (when build/Taskfile is found)
 # * just command runner (when justfile is found)
 # * npm package.json scripts (when package.json is found)
+# * make (when [Mm]akefile is found)
+# * lets (when lets.yaml is found)
+# * task (when [Tt]askfile.{yml,yaml} is found)
+# * tusk (when tusk.yml is found)
 export def main [] {
     if ("build/Taskfile" | path exists) {
         nurify-from-b5
