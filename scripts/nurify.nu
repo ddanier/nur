@@ -60,7 +60,7 @@ def nurify-from-makefile [] {
     prepare-nurfile
     open ( glob "[Mm]akefile" | first )
         | lines
-        | find ':'
+        | find --regex '^[\w\.-]+\s*:'
         | where ($it | str starts-with '.') == false
         | split column ':' target
         | get target
