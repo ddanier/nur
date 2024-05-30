@@ -43,7 +43,7 @@ def nurify-from-just [] {
         | transpose k v
         | each {
             |it| $"def --wrapped \"nur ($it.k)\" [...args] {\n    ^just \"($it.k)\" ...$args\n}\n"
-        }  | save -f -a nurfile
+        } | save -f -a nurfile
 }
 
 def nurify-from-package-json [] {
@@ -53,7 +53,51 @@ def nurify-from-package-json [] {
         | transpose k v
         | each {
             |it| $"def --wrapped \"nur ($it.k)\" [...args] {\n    ^npm run \"($it.k)\" ...$args\n}\n"
-        }  | save -f -a nurfile
+        } | save -f -a nurfile
+}
+
+def nurify-from-makefile [] {
+    prepare-nurfile
+    open ( glob "[Mm]akefile" | first )
+        | lines
+        | find ':'
+        | where ($it | str starts-with '.') == false
+        | split column ':' target
+        | get target
+        | str trim
+        | each {
+            |it| $"def --wrapped \"nur ($it)\" [...args] {\n    ^make \"($it)\" ...$args\n}\n"
+        } | save -f -a nurfile
+}
+
+def nurify-from-lets [] {
+    prepare-nurfile
+    open lets.yaml
+        | get commands
+        | transpose k v
+        | each {
+            |it| $"def --wrapped \"nur ($it.k)\" [...args] {\n    ^lets \"($it.k)\" ...$args\n}\n"
+        } | save -f -a nurfile
+}
+
+def nurify-from-task [] {
+    prepare-nurfile
+    open ( glob "[Tt]askfile.{yml,yaml}" | first )
+        | get tasks
+        | transpose k v
+        | each {
+            |it| $"def --wrapped \"nur ($it.k)\" [...args] {\n    ^task \"($it.k)\" ...$args\n}\n"
+        } | save -f -a nurfile
+}
+
+def nurify-from-tusk [] {
+    prepare-nurfile
+    open tusk.yml
+        | get tasks
+        | transpose k v
+        | each {
+            |it| $"def --wrapped \"nur ($it.k)\" [...args] {\n    ^tusk \"($it.k)\" ...$args\n}\n"
+        } | save -f -a nurfile
 }
 
 # Create nurfile from different task/command runners. The nurfile will contain tasks to wrap
@@ -70,6 +114,14 @@ export def main [] {
     	nurify-from-just
     } else if ("package.json" | path exists) {
     	nurify-from-package-json
+    } else if (glob "[Mm]akefile" | is-not-empty) {
+    	nurify-from-makefile
+    } else if ("lets.yaml" | path exists) {
+    	nurify-from-lets
+    } else if (glob "[Tt]askfile.{yml,yaml}" | is-not-empty) {
+    	nurify-from-task
+    } else if ("tusk.yml" | path exists) {
+    	nurify-from-tusk
     } else {
         error make {"msg": "Could not find any existing task/command runner, please run nurify in project root"}
     }
