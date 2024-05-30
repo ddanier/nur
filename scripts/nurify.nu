@@ -5,7 +5,7 @@
 # > nurify  # Will create nurfile
 # > nur --help
 #
-# The genrated nurify is not meant to replace your current task/commend runner, instead it
+# The generated nurfile is not meant to replace your current task/commend runner, instead it
 # will create a nurfile allowing you to use nur instead of the projects task runner. nur
 # will then still execute the original task runner.
 # Still this allows you to gradually convert your project to nur by replacing your tasks
@@ -71,6 +71,6 @@ export def main [] {
     } else if ("package.json" | path exists) {
     	nurify-from-package-json
     } else {
-        error make {"msg": "Cound not find any existing task/command runner, please run nurify in project root"}
+        error make {"msg": "Could not find any existing task/command runner, please run nurify in project root"}
     }
 }
