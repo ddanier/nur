@@ -70,6 +70,74 @@ def nurify-from-makefile [] {
         } | save -f -a nurfile
 }
 
+def nurify-from-toolkit-nu [] {
+    # Output warning as we cannot support all features and the conversion may not cover all cases
+    #
+    # Example of a case not convertable:
+    # We cannot handle (named) parameters of type "list<string>" as the nur call will not accept a list of
+    # strings. This is only possible with nu builtin or custom commands. But nur is neither of those, as it
+    # is a separate executable using the nu libraries. So we cannot handle this case. Basically nu shell will
+    # tell you that you cannot pass lists to external commands. 😉
+    print $"(ansi red)Conversion from toolkit.nu may not cover all cases, you might need to extend/fix the generated nurfile(ansi reset)"
+    print $"(ansi red)\(But be aware: Not all features nu shell commands would provide are available as nur is an external command\)(ansi reset)"
+
+    let toolkit_commands = (
+        nu -c "use toolkit.nu ; scope modules | where name == 'toolkit' | first | get commands | where name != 'toolkit' | each { |it| print $it.name } ; null"
+    ) | lines
+
+    def get-toolkit-command-signature [command: string] {
+        let command_signature = (
+            nu -c $"use toolkit.nu ; scope commands | where type == 'custom' and name == 'toolkit ($command)' | first | get signatures | to nuon" | from nuon
+        )
+
+        $command_signature | transpose k v | get v | first
+    }
+
+    prepare-nurfile
+    "use toolkit.nu\n\n" | save -f -a nurfile
+    $toolkit_commands
+        | each {
+            |it|
+            let signatures = get-toolkit-command-signature $it
+            let arguments = $signatures | each {
+                |param|
+                let param_name = $param.parameter_name
+                mut param_type = if ($param.syntax_shape | is-not-empty) and $param.syntax_shape != 'any' { $': ($param.syntax_shape)' } else ''
+                if $param_type starts-with ': completable<' {
+                    $param_type = $": ($param_type | str substring 14..(($param_type | str length) - 2))"
+                }
+                let param_docs = if ($param.description | is-not-empty) { $'  # ($param.description)' }
+                match $param {
+                    {parameter_type: "positional"} => $"    ($param_name)($param_type)($param_docs)",
+                    {parameter_type: "named"} => $"    --($param_name)($param_type)($param_docs)",
+                    {parameter_type: "switch"} => $"    --($param_name)($param_docs)",
+                    {parameter_type: "rest"} => $"    ...($param_name | default 'rest')($param_type)($param_docs)",
+                }
+            } | str join "\n"
+            let call_arguments = $signatures | each {
+                |param|
+                let param_name = $param.parameter_name
+                match $param {
+                    {parameter_type: "positional"} => $"$($param_name | str replace --all '-' '_')",
+                    {parameter_type: "named"} => $"--($param_name) $($param_name | str replace --all '-' '_')",
+                    {parameter_type: "switch"} => $"--($param_name)=$($param_name | str replace --all '-' '_')",
+                }
+            } | str join " "
+            let rest_arguments = $signatures | each {
+                |param|
+                let param_name = $param.parameter_name
+                match $param {
+                    {parameter_type: "rest"} => $"...$($param_name | default 'rest' | str replace --all '-' '_')",
+                }
+            } | str join " "
+            let has_rest_arguments = $signatures | any {
+                |param| $param.parameter_type == "rest"
+            }
+
+            $"def( if $has_rest_arguments { ' --wrapped' }) \"nur ($it)\" [\n($arguments)\n] {\n    toolkit ($it) ($call_arguments) (if $has_rest_arguments { $rest_arguments })\n}\n"
+        } | save -f -a nurfile
+}
+
 def nurify-from-lets [] {
     prepare-nurfile
     open lets.yaml
@@ -108,23 +176,34 @@ def nurify-from-tusk [] {
 # * just command runner (when justfile is found)
 # * npm package.json scripts (when package.json is found)
 # * make (when [Mm]akefile is found)
+# * nu toolkit module (when toolkit.nu is found)
 # * lets (when lets.yaml is found)
 # * task (when [Tt]askfile.{yml,yaml} is found)
 # * tusk (when tusk.yml is found)
 export def main [] {
     if ("build/Taskfile" | path exists) {
+        print $"(ansi cyan)Found build/Taskfile, converting from b5 task runner(ansi reset)"
         nurify-from-b5
     } else if ("justfile" | path exists) {
+        print $"(ansi cyan)Found justfile, converting from just command runner(ansi reset)"
     	nurify-from-just
     } else if ("package.json" | path exists) {
+        print $"(ansi cyan)Found package.json, converting from npm script(ansi reset)"
     	nurify-from-package-json
     } else if (glob "[Mm]akefile" | is-not-empty) {
+        print $"(ansi cyan)Found [Mm]akefile, converting from make(ansi reset)"
     	nurify-from-makefile
+    } else if ("toolkit.nu" | path exists) {
+        print $"(ansi cyan)Found toolkit.nu, converting from toolkit.nu(ansi reset)"
+    	nurify-from-toolkit-nu
     } else if ("lets.yaml" | path exists) {
+        print $"(ansi cyan)Found lets.yaml, converting from lets(ansi reset)"
     	nurify-from-lets
     } else if (glob "[Tt]askfile.{yml,yaml}" | is-not-empty) {
+        print $"(ansi cyan)Found [Tt]askfile.{yml,yaml}, converting from task(ansi reset)"
     	nurify-from-task
     } else if ("tusk.yml" | path exists) {
+        print $"(ansi cyan)Found tusk.yml, converting from tusk(ansi reset)"
     	nurify-from-tusk
     } else {
         error make {"msg": "Could not find any existing task/command runner, please run nurify in project root"}
