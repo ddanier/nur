@@ -2036,7 +2036,7 @@ dependencies = [
 
 [[package]]
 name = "nur"
-version = "0.6.1"
+version = "0.6.2"
 dependencies = [
  "miette",
  "nu-ansi-term",
