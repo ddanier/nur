@@ -2,7 +2,8 @@
 
 `nur` is a simple, yet very powerful task runner. It borrows ideas from [`b5`](https://github.com/team23/b5)
 and [`just`](https://github.com/casey/just), but uses [`nu` shell scripting](https://www.nushell.sh/book/programming_in_nu.md)
-to define the tasks. This allows for well-structured tasks.
+to define the tasks. This allows for well-structured tasks while being able to use the super-powers of `nu`
+in your tasks.
 
 ## Quick overview and example
 
