@@ -53,10 +53,10 @@ def "nur do-failed-execution" [] {
 def "nur test-failed-execution" [] {
     try {
         run-nur do-failed-execution
-        error make {"msg": "Did not fail, this is an error"}
     } catch {
-        # all ok
+        return  # all ok
     }
+    error make {"msg": "Did not fail, this is an error"}
 }
 
 def "nur do-invalid-executable" [] {
@@ -65,10 +65,10 @@ def "nur do-invalid-executable" [] {
 def "nur test-invalid-executable" [] {
     try {
         run-nur do-invalid-executable o+e>| ignore
-        error make {"msg": "Did not fail, this is an error"}
     } catch {
-        # all ok
+        return  # all ok
     }
+    error make {"msg": "Did not fail, this is an error"}
 }
 
 def "nur do-sub-task" [] { print "ok" }
