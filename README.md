@@ -36,7 +36,7 @@ like you would normally do in your shell (like `npm ci` or something). `nur` is 
 programming language, packaging system or anything. As in the end the `nurfile` is basically a
 normal `nu` script you can put into this whatever you like.
 
-I recommend reading [working with `nur`[(https://nur-taskrunner.github.io/docs/working-with-nur/)] to get an
+I recommend reading [working with `nur`](https://nur-taskrunner.github.io/docs/working-with-nur/) to get an
 overview how to use `nur`. Also I recommend reading the `nu` documentation about
 [custom commands](https://www.nushell.sh/book/custom_commands.html) for details on how to define `nu`
 commands (and `nur` tasks) and at least read through the
@@ -63,7 +63,7 @@ This also includes MacOS (using homebrew) and Windows (using `.msi` installer) i
 include any `nur` tasks defined as sub commands to `"nur"`. `nur` tasks may use the normal `nu` command
 features to define required arguments, their types and more.
 
-See the [working with nur](https://nur-taskrunner.github.io/docs/working-with-nur/) documentation
+See the [working with `nur`](https://nur-taskrunner.github.io/docs/working-with-nur/) documentation
 for more details.
 
 ## Switching to `nur`
