@@ -534,18 +534,18 @@ dependencies = [
 
 [[package]]
 name = "clap"
-version = "4.5.9"
+version = "4.5.10"
 source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "64acc1846d54c1fe936a78dc189c34e28d3f5afc348403f28ecf53660b9b8462"
+checksum = "8f6b81fb3c84f5563d509c59b5a48d935f689e993afa90fe39047f05adef9142"
 dependencies = [
  "clap_builder",
 ]
 
 [[package]]
 name = "clap_builder"
-version = "4.5.9"
+version = "4.5.10"
 source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "6fb8393d67ba2e7bfaf28a23458e4e2b543cc73a99595511eb207fdb8aede942"
+checksum = "5ca6706fd5224857d9ac5eb9355f6683563cc0541c7cd9d014043b57cbec78ac"
 dependencies = [
  "anstream",
  "anstyle",
@@ -765,6 +765,12 @@ dependencies = [
 ]
 
 [[package]]
+name = "deunicode"
+version = "1.6.0"
+source = "registry+https://github.com/rust-lang/crates.io-index"
+checksum = "339544cc9e2c4dc3fc7149fd630c5f22263a4fdf18a98afd0075784968b5cf00"
+
+[[package]]
 name = "dialoguer"
 version = "0.11.0"
 source = "registry+https://github.com/rust-lang/crates.io-index"
@@ -787,24 +793,24 @@ dependencies = [
 ]
 
 [[package]]
-name = "dirs-next"
-version = "2.0.0"
+name = "dirs"
+version = "5.0.1"
 source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "b98cf8ebf19c3d1b223e151f99a4f9f0690dca41414773390fc824184ac833e1"
+checksum = "44c45a9d03d6676652bcb5e724c7e988de1acad23a711b5217ab9cbecbec2225"
 dependencies = [
- "cfg-if",
- "dirs-sys-next",
+ "dirs-sys",
 ]
 
 [[package]]
-name = "dirs-sys-next"
-version = "0.1.2"
+name = "dirs-sys"
+version = "0.4.1"
 source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "4ebda144c4fe02d1f7ea1a7d9641b6fc6b580adcfa024ae48797ecdeb6825b4d"
+checksum = "520f05a5cbd335fae5a99ff7a6ab8627577660ee5cfd6a94a6a929b52ff0321c"
 dependencies = [
  "libc",
+ "option-ext",
  "redox_users",
- "winapi",
+ "windows-sys 0.48.0",
 ]
 
 [[package]]
@@ -1601,18 +1607,18 @@ dependencies = [
 
 [[package]]
 name = "nu-ansi-term"
-version = "0.50.0"
+version = "0.50.1"
 source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "dd2800e1520bdc966782168a627aa5d1ad92e33b984bf7c7615d31280c83ff14"
+checksum = "d4a28e057d01f97e61255210fcff094d74ed0466038633e95017f5beb68e4399"
 dependencies = [
- "windows-sys 0.48.0",
+ "windows-sys 0.52.0",
 ]
 
 [[package]]
 name = "nu-cli"
-version = "0.95.0"
+version = "0.96.0"
 source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "43b2736696ee79c7cc9e64580e77b296bd7dedfab9421292af54c7e203adb120"
+checksum = "c9a53f49e575d5e895422145c796a47cb4d22604dd3dcdde6809a586b22ab7c0"
 dependencies = [
  "chrono",
  "crossterm",
@@ -1641,9 +1647,9 @@ dependencies = [
 
 [[package]]
 name = "nu-cmd-base"
-version = "0.95.0"
+version = "0.96.0"
 source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "3d203ace80e7d6ff951048ee9b2233972002852f1761ffcacf953425fa43eb41"
+checksum = "2de16db15970b3ff5c1a395d9b36b3d33fc43cbfdf95eb55b446e25ad466ea19"
 dependencies = [
  "indexmap",
  "miette",
@@ -1655,9 +1661,9 @@ dependencies = [
 
 [[package]]
 name = "nu-cmd-extra"
-version = "0.95.0"
+version = "0.96.0"
 source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "f630906239780424bdbecc31aad7ac7ee4d4bbd2bf927659bab90a44456ee590"
+checksum = "b6ee70c3f386c6db75e4ea2350242bf22d6949d188f76bd1e3d190dfc0e2ba19"
 dependencies = [
  "fancy-regex",
  "heck",
@@ -1679,9 +1685,9 @@ dependencies = [
 
 [[package]]
 name = "nu-cmd-lang"
-version = "0.95.0"
+version = "0.96.0"
 source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "4eff754ac268d5c420ec3e9d8f7567f88d3958ee2fd23ae3578ed7a2e00d1633"
+checksum = "02e5d0f19ae25d9d567eb487eba5512fa1367f280c6d9a67bd1f149339a3b111"
 dependencies = [
  "itertools 0.12.1",
  "nu-engine",
@@ -1693,9 +1699,9 @@ dependencies = [
 
 [[package]]
 name = "nu-color-config"
-version = "0.95.0"
+version = "0.96.0"
 source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "b05f27f7b99021b50567d6c8ce7e58fcb467939f82e85f75d8fb726c36a1a383"
+checksum = "9515159eb9d1fde8853ca2cc960d1cf3bf936408fdc657c3b07bfafd5956f7c5"
 dependencies = [
  "nu-ansi-term",
  "nu-engine",
@@ -1706,9 +1712,9 @@ dependencies = [
 
 [[package]]
 name = "nu-command"
-version = "0.95.0"
+version = "0.96.0"
 source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "c7bef7b1f4aed52432c32499150464faa0a2d44c3239f846cca4b195012118b6"
+checksum = "f62cecd842781fad1fcabe199641ad2b5c89aad959e058c53ef001dbd18b3ae8"
 dependencies = [
  "alphanumeric-sort",
  "base64",
@@ -1723,6 +1729,7 @@ dependencies = [
  "chrono-tz",
  "crossterm",
  "csv",
+ "deunicode",
  "dialoguer",
  "digest",
  "dtparse",
@@ -1795,7 +1802,7 @@ dependencies = [
  "uu_mv",
  "uu_uname",
  "uu_whoami",
- "uucore 0.0.26",
+ "uucore",
  "uuid",
  "v_htmlescape",
  "wax",
@@ -1806,9 +1813,9 @@ dependencies = [
 
 [[package]]
 name = "nu-derive-value"
-version = "0.95.0"
+version = "0.96.0"
 source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "9724b3754a25b2f8a2a7f1530e0a162fa57a3cadd0b5c3b52f75edcdb2070c09"
+checksum = "39aca8fcc17ec138e693197f46d6363da7a2adb9d219e8d62bb35c40c54e13ad"
 dependencies = [
  "convert_case",
  "proc-macro-error",
@@ -1819,10 +1826,11 @@ dependencies = [
 
 [[package]]
 name = "nu-engine"
-version = "0.95.0"
+version = "0.96.0"
 source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "f5ed7cd7d34dd3e58292eaaa658f4b7342da99e979da54babd50c08d5d6d59e5"
+checksum = "e206d38658012a1061841adb97183586d774ec75962b434d7479ee47d5faab70"
 dependencies = [
+ "log",
  "nu-glob",
  "nu-path",
  "nu-protocol",
@@ -1831,9 +1839,9 @@ dependencies = [
 
 [[package]]
 name = "nu-explore"
-version = "0.95.0"
+version = "0.96.0"
 source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "3d06d39b113e7a963c6fb3135d4a2eb3da509025ff9d6dc46c13b6c91a858709"
+checksum = "7d322e6391b005bb1928d24e57e5f48a91efd28d1467175b55b4a55f8643399c"
 dependencies = [
  "ansi-str",
  "anyhow",
@@ -1858,15 +1866,15 @@ dependencies = [
 
 [[package]]
 name = "nu-glob"
-version = "0.95.0"
+version = "0.96.0"
 source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "acd2879444c53bbfb51a2ab060ae1257fe2c8446e6b2cd8a63c88a4d6a728a7a"
+checksum = "6e9bc4d3b40883771d53259c782cf0eacf43b5e1c9ccea6f950bd308efd17bec"
 
 [[package]]
 name = "nu-json"
-version = "0.95.0"
+version = "0.96.0"
 source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "2806bb62a0766c52197b960f1c6f03319a9c71ea3ca919733ab15ca36b4e5551"
+checksum = "315f2ea1399da9bca8347b64208a6ed53641885d4d8bf0b75697118e81c25873"
 dependencies = [
  "linked-hash-map",
  "num-traits",
@@ -1876,9 +1884,9 @@ dependencies = [
 
 [[package]]
 name = "nu-parser"
-version = "0.95.0"
+version = "0.96.0"
 source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "6543d2a61e1899b5812264ac6a3a7a54197bb1d9cdf8532af41e9800c4a66d59"
+checksum = "c67862a302b655237ab4a14925e521e473c15ea6c361b5a63745823121d8fae7"
 dependencies = [
  "bytesize",
  "chrono",
@@ -1892,37 +1900,40 @@ dependencies = [
 
 [[package]]
 name = "nu-path"
-version = "0.95.0"
+version = "0.96.0"
 source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "6633f681c4c92d86198d91f3a4b212e64a33901ca492dd5529631c8ac7dd6ca9"
+checksum = "a16d6545959685d795e7c8b35d25887d200765dd08e37cbcd16f793bc4ba32f2"
 dependencies = [
- "dirs-next",
+ "dirs",
  "omnipath",
  "pwd",
 ]
 
 [[package]]
 name = "nu-pretty-hex"
-version = "0.95.0"
+version = "0.96.0"
 source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "0e87b6cd035d245fea3d9a9d1ce36b13339b89d20abd2970088196ead844ff29"
+checksum = "2b3fa35c7255474840418ac9e90b8d6c397757c5db08df503042303afb6c890b"
 dependencies = [
  "nu-ansi-term",
 ]
 
 [[package]]
 name = "nu-protocol"
-version = "0.95.0"
+version = "0.96.0"
 source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "f83d22636a014d5db9f894db2e53fac656b686a35f1002ecc1b8b46b47474874"
+checksum = "c8e963e33b9f2029e992eb9a77efe3e3e266c831ba59d1c485d34de0cc941526"
 dependencies = [
  "brotli",
  "byte-unit",
  "chrono",
  "chrono-humanize",
  "convert_case",
+ "dirs",
+ "dirs-sys",
  "fancy-regex",
  "indexmap",
+ "log",
  "lru",
  "miette",
  "nix",
@@ -1936,13 +1947,14 @@ dependencies = [
  "serde",
  "thiserror",
  "typetag",
+ "windows-sys 0.48.0",
 ]
 
 [[package]]
 name = "nu-std"
-version = "0.95.0"
+version = "0.96.0"
 source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "1c0b06d788859c02c855f548d764be3318a428d49fab3ab8eb59a91db9cdd9dd"
+checksum = "75a18a5cbbd3237e0bd857cb2e0796c4c02cb04b547586b4114516df107d978b"
 dependencies = [
  "log",
  "miette",
@@ -1953,9 +1965,9 @@ dependencies = [
 
 [[package]]
 name = "nu-system"
-version = "0.95.0"
+version = "0.96.0"
 source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "8c5e86b4e9ea84b4b12778a159adbbef5f4346213dcc4e9e58f3c40f5c9865af"
+checksum = "c22329ae7e604736901c4030e7f78543de2883e35f7fd4ea9718232d4c654360"
 dependencies = [
  "chrono",
  "itertools 0.12.1",
@@ -1973,9 +1985,9 @@ dependencies = [
 
 [[package]]
 name = "nu-table"
-version = "0.95.0"
+version = "0.96.0"
 source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "4a79adc0e9921129e5782c03e579546a50633f6b1c08a0bc4e8cdc3c7e10e99f"
+checksum = "003774013615015297b31a93e5947ffa0792d94eed1c57e8080537741a74d6d8"
 dependencies = [
  "fancy-regex",
  "nu-ansi-term",
@@ -1989,9 +2001,9 @@ dependencies = [
 
 [[package]]
 name = "nu-term-grid"
-version = "0.95.0"
+version = "0.96.0"
 source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "96b8a7a0bf802535005ec20f7f6152ddb334760ed1e2492a3fcb1a38becd467f"
+checksum = "4a7ba71be1477edd85993e8eb7c256e59fa48560b9f4a3637caa83d7cff6fdc0"
 dependencies = [
  "nu-utils",
  "unicode-width",
@@ -1999,9 +2011,9 @@ dependencies = [
 
 [[package]]
 name = "nu-utils"
-version = "0.95.0"
+version = "0.96.0"
 source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "bc747ba17d4762480a7569df44b49fb7f465b12b98aaa2a18aab2eeb585df79c"
+checksum = "43a01575a81aee1b5fd4a86c011920ca3d65d0c1d39e6352b5bb4c0d61d2fb6c"
 dependencies = [
  "crossterm_winapi",
  "log",
@@ -2056,9 +2068,9 @@ checksum = "830b246a0e5f20af87141b25c173cd1b609bd7779a4617d6ec582abaf90870f3"
 
 [[package]]
 name = "nuon"
-version = "0.95.0"
+version = "0.96.0"
 source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "729825a95c512a895e18bf11f72e7480851a29a939904468e4d2bc63b93b62d4"
+checksum = "22ffb9bb65a2499ddc2aae490f038dc8e7daed8a2d17e6009191b3525164961c"
 dependencies = [
  "fancy-regex",
  "nu-engine",
@@ -2091,9 +2103,9 @@ dependencies = [
 
 [[package]]
 name = "object"
-version = "0.36.1"
+version = "0.36.2"
 source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "081b846d1d56ddfc18fdf1a922e4f6e07a11768ea1b92dec44e42b72712ccfce"
+checksum = "3f203fa8daa7bb185f760ae12bd8e097f63d17041dcdcaf675ac54cdf863170e"
 dependencies = [
  "memchr",
 ]
@@ -2174,6 +2186,12 @@ dependencies = [
  "pkg-config",
  "vcpkg",
 ]
+
+[[package]]
+name = "option-ext"
+version = "0.2.0"
+source = "registry+https://github.com/rust-lang/crates.io-index"
+checksum = "04744f49eae99ab78e0d5c0b603ab218f515ea8cfe5a456d7629ad883a3b6e7d"
 
 [[package]]
 name = "os_display"
@@ -2633,9 +2651,9 @@ dependencies = [
 
 [[package]]
 name = "reedline"
-version = "0.32.0"
+version = "0.33.0"
 source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "abf59e4c97b5049ba96b052cdb652368305a2eddcbce9bf1c16f9d003139eeea"
+checksum = "2f8c676a3f3814a23c6a0fc9dff6b6c35b2e04df8134aae6f3929cc34de21a53"
 dependencies = [
  "chrono",
  "crossterm",
@@ -2981,9 +2999,9 @@ dependencies = [
 
 [[package]]
 name = "shadow-rs"
-version = "0.28.0"
+version = "0.29.0"
 source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "1d75516bdaee8f640543ad1f6e292448c23ce57143f812c3736ab4b0874383df"
+checksum = "0a600f795d0894cda22235b44eea4b85c2a35b405f65523645ac8e35b306817a"
 dependencies = [
  "const_format",
  "is_debug",
@@ -3538,92 +3556,75 @@ checksum = "06abde3611657adf66d383f00b093d7faecc7fa57071cce2578660c9f1010821"
 
 [[package]]
 name = "uu_cp"
-version = "0.0.26"
+version = "0.0.27"
 source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "c31fc5c95f7668999e129464a29e9080f69ba01ccf7a0ae43ff2cfdb15baa340"
+checksum = "6fb99d355ccb02e8c514e4a1d93e4aa4eedea9837de24635dfd24c165971444e"
 dependencies = [
  "clap",
  "filetime",
  "indicatif",
  "libc",
  "quick-error",
- "uucore 0.0.27",
+ "uucore",
  "walkdir",
  "xattr",
 ]
 
 [[package]]
 name = "uu_mkdir"
-version = "0.0.26"
+version = "0.0.27"
 source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "496d95e0e3121e4d424ba62019eb84a6f1102213ca8ca16c0a2f8c652c7236c3"
+checksum = "219588fbc146f18188781208ac4034616c51cf151677b4e1f9caf63ca8a7f2cf"
 dependencies = [
  "clap",
- "uucore 0.0.27",
+ "uucore",
 ]
 
 [[package]]
 name = "uu_mktemp"
-version = "0.0.26"
+version = "0.0.27"
 source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "a28a0d9744bdc28ceaf13f70b959bacded91aedfd008402d72fa1e3224158653"
+checksum = "b1e79ad2c5911908fce23a6069c52ca82e1997e2ed4bf6abf2d867c79c3dc73f"
 dependencies = [
  "clap",
  "rand",
  "tempfile",
- "uucore 0.0.27",
+ "uucore",
 ]
 
 [[package]]
 name = "uu_mv"
-version = "0.0.26"
+version = "0.0.27"
 source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "53680908b01c5ac3cc0ee8a376de3e51a36dde2c5a5227a115a3d0977cc4539b"
+checksum = "cd57c8d02f8a99ed56ed9f6fddab403ee0e2bf9e8f3a5ca8f0f9e4d6e3e392a0"
 dependencies = [
  "clap",
  "fs_extra",
  "indicatif",
- "uucore 0.0.27",
+ "uucore",
 ]
 
 [[package]]
 name = "uu_uname"
-version = "0.0.26"
+version = "0.0.27"
 source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "a7f4125fb4f286313bca8f222abaefe39db54d65179ea788c91ebd3162345f4e"
+checksum = "ad1ca90f9b292bccaad0de70e6feccac5182c6713a5e1ca72d97bf3555b608b4"
 dependencies = [
  "clap",
  "platform-info",
- "uucore 0.0.27",
+ "uucore",
 ]
 
 [[package]]
 name = "uu_whoami"
-version = "0.0.26"
+version = "0.0.27"
 source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "7f7b313901a15cfde2d88f434fcd077903d690f73cc36d1cec20f47906960aec"
+checksum = "bc7c52e42e0425710461700adc1063f468f2ba8a8ff83ee69ba661095ab7b77a"
 dependencies = [
  "clap",
  "libc",
- "uucore 0.0.27",
+ "uucore",
  "windows-sys 0.48.0",
-]
-
-[[package]]
-name = "uucore"
-version = "0.0.26"
-source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "fb2ea2f77699e5ff5c7e001af588ceb34cae8b5f9af5496bea5a6476aaa8e780"
-dependencies = [
- "clap",
- "glob",
- "libc",
- "nix",
- "number_prefix",
- "once_cell",
- "os_display",
- "uucore_procs",
- "wild",
 ]
 
 [[package]]
