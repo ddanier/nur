@@ -1,5 +1,4 @@
 use nu_engine::get_full_help;
-use nu_protocol::ast::Call;
 use nu_protocol::engine::{Command, EngineState, Stack};
 use nu_protocol::{
     Category, Example, IntoPipelineData, PipelineData, ShellError, Signature, SyntaxShape, Value,
@@ -65,7 +64,7 @@ impl Command for Nur {
         &self,
         engine_state: &EngineState,
         stack: &mut Stack,
-        call: &Call,
+        call: &nu_protocol::engine::Call,
         _input: PipelineData,
     ) -> Result<PipelineData, ShellError> {
         Ok(Value::string(get_full_help(&Nur, engine_state, stack), call.head).into_pipeline_data())
