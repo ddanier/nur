@@ -26,8 +26,6 @@ pub(crate) fn init_engine_state<P: AsRef<Path>>(project_path: P) -> NurResult<En
     let engine_state = nu_cmd_lang::create_default_context();
     let engine_state = nu_command::add_shell_command_context(engine_state);
     let engine_state = nu_cmd_extra::add_extra_command_context(engine_state);
-    #[cfg(feature = "dataframe")]
-    let engine_state = nu_cmd_dataframe::add_dataframe_context(engine_state);
     let engine_state = nu_cli::add_cli_context(engine_state);
     let engine_state = nu_explore::add_explore_context(engine_state);
     let engine_state = crate::commands::create_nu_context(engine_state);
