@@ -61,6 +61,7 @@ def nurify-from-makefile [] {
     open ( glob "[Mm]akefile" | first )
         | lines
         | find --regex '^[\w\.-]+\s*:'
+        | where ($it | str trim -l) == $it
         | where ($it | str starts-with '.') == false
         | split column ':' target
         | get target
