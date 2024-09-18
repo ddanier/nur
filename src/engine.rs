@@ -14,7 +14,8 @@ use nu_engine::get_full_help;
 use nu_protocol::ast::Block;
 use nu_protocol::engine::{Command, Stack, StateWorkingSet};
 use nu_protocol::{
-    engine::EngineState, report_error, report_error_new, PipelineData, Record, Span, Type, Value,
+    engine::EngineState, report_parse_error, report_shell_error, PipelineData, Record, ShellError,
+    Span, Type, Value,
 };
 use nu_std::load_standard_library;
 use nu_utils::stdout_write_all_and_flush;
@@ -269,7 +270,7 @@ impl NurEngine {
             Ok(block)
         } else {
             if let Some(err) = working_set.parse_errors.first() {
-                report_error(&working_set, err);
+                report_parse_error(&working_set, err);
                 std::process::exit(1);
             }
 
@@ -285,7 +286,7 @@ impl NurEngine {
             input,
         )
         .map_err(|err| {
-            report_error_new(&self.engine_state, &err);
+            report_shell_error(&self.engine_state, &err);
             std::process::exit(1);
         })
     }
@@ -313,30 +314,35 @@ impl NurEngine {
             match self.engine_state.cwd(Some(&self.stack)) {
                 Ok(cwd) => {
                     if let Err(e) = self.engine_state.merge_env(&mut self.stack, cwd) {
-                        let working_set = StateWorkingSet::new(&self.engine_state);
-                        report_error(&working_set, &e);
+                        report_shell_error(&self.engine_state, &e);
                     }
                 }
                 Err(e) => {
-                    let working_set = StateWorkingSet::new(&self.engine_state);
-                    report_error(&working_set, &e);
+                    report_shell_error(&self.engine_state, &e);
                 }
             }
         }
 
         // Print result is requested
-        if print {
-            let exit_details = result.print(&self.engine_state, &mut self.stack, false, false)?;
-            match exit_details {
-                Some(exit_status) => Ok(exit_status.code()),
-                None => Ok(0),
-            }
+        let exit_details = if print {
+            result.print(&self.engine_state, &mut self.stack, false, false)
         } else {
-            if let Some(exit_status) = result.drain()? {
-                return Ok(exit_status.code());
-            }
+            result.drain()
+        };
 
-            Ok(0)
+        match exit_details {
+            Ok(()) => Ok(0),
+            Err(err) => {
+                report_shell_error(&self.engine_state, &err);
+
+                match err {
+                    ShellError::NonZeroExitCode {
+                        exit_code,
+                        span: _span,
+                    } => Ok(exit_code.into()),
+                    _ => Ok(1),
+                }
+            }
         }
     }
 
