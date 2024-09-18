@@ -16,7 +16,7 @@ impl Command for Nur {
         let mut signature = Signature::build("nur");
 
         signature = signature
-            .usage("nur - a taskrunner based on nu shell.")
+            .description("nur - a taskrunner based on nu shell.")
             .switch("version", "Output version number and exit", Some('v'))
             .switch("list", "List available tasks and then just exit", Some('l'))
             .switch(
@@ -56,7 +56,7 @@ impl Command for Nur {
         signature
     }
 
-    fn usage(&self) -> &str {
+    fn description(&self) -> &str {
         "nur - a taskrunner based on nu shell."
     }
 
