@@ -102,6 +102,11 @@ def "nur test-invalid-calls" [] {
     assert exit-code { run-nur --commands some-command --enter-shell o+e>| ignore } 1
 }
 
+def "nur do-test-preserve-exit-code" [] { exit 123 }
+def "nur test-preserve-exit-code" [] {
+    assert exit-code { run-nur do-test-preserve-exit-code o+e>| ignore } 123
+}
+
 # Utils and other commands
 
 def is-windows [] {
