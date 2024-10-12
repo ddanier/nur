@@ -21,7 +21,7 @@ repos:
           - "@team23/commitlint-config@1.0.0"
 
 default_stages:
-  - commit
+  - pre-commit
 
 default_install_hook_types:
   - pre-commit
