@@ -4,7 +4,7 @@ use crate::errors::{NurError, NurResult};
 use crate::names::{
     NUR_ENV_NUR_TASK_CALL, NUR_ENV_NUR_TASK_NAME, NUR_ENV_NUR_VERSION, NUR_ENV_NU_LIB_DIRS,
     NUR_NAME, NUR_VAR_CONFIG_DIR, NUR_VAR_DEFAULT_LIB_DIR, NUR_VAR_PROJECT_PATH, NUR_VAR_RUN_PATH,
-    NUR_VAR_TASK_NAME, NUSHELL_FOLDER,
+    NUR_VAR_TASK_NAME,
 };
 use crate::nu_version::NU_VERSION;
 use crate::scripts::{get_default_nur_config, get_default_nur_env};
@@ -271,7 +271,6 @@ impl NurEngine {
         } else {
             if let Some(err) = working_set.parse_errors.first() {
                 report_parse_error(&working_set, err);
-                std::process::exit(1);
             }
 
             Err(NurError::ParseErrors(working_set.parse_errors))
@@ -312,8 +311,8 @@ impl NurEngine {
         // Merge env is requested
         if merge_env {
             match self.engine_state.cwd(Some(&self.stack)) {
-                Ok(cwd) => {
-                    if let Err(e) = self.engine_state.merge_env(&mut self.stack, cwd) {
+                Ok(_cwd) => {
+                    if let Err(e) = self.engine_state.merge_env(&mut self.stack) {
                         report_shell_error(&self.engine_state, &e);
                     }
                 }
@@ -412,7 +411,6 @@ impl NurEngine {
         match evaluate_repl(
             &mut self.engine_state,
             self.stack.clone(),
-            NUSHELL_FOLDER,
             None,
             None,
             std::time::Instant::now(),
@@ -466,17 +464,6 @@ mod tests {
         let engine_state = init_engine_state(&temp_dir_path).unwrap();
 
         assert!(engine_state.get_env_var("NU_VERSION").is_some());
-    }
-
-    #[test]
-    fn test_init_engine_state_will_add_std_lib() {
-        let temp_dir = tempdir().unwrap();
-        let temp_dir_path = temp_dir.path().to_path_buf();
-        let engine_state = init_engine_state(&temp_dir_path).unwrap();
-
-        assert!(engine_state
-            .find_module("std".as_bytes(), &[vec![]],)
-            .is_some());
     }
 
     #[test]
@@ -534,6 +521,16 @@ mod tests {
             .unwrap();
 
         nur_engine.stack.get_var(*var_id, Span::unknown()).is_ok()
+    }
+
+    #[test]
+    fn test_nur_engine_will_include_std_lib() {
+        let temp_dir = tempdir().unwrap();
+        let mut nur_engine = _prepare_nur_engine(&temp_dir);
+
+        assert!(nur_engine.eval("use std", PipelineData::empty()).is_ok());
+
+        _cleanup_nur_engine(&temp_dir);
     }
 
     #[test]
