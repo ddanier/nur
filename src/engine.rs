@@ -4,7 +4,7 @@ use crate::errors::{NurError, NurResult};
 use crate::names::{
     NUR_ENV_NUR_TASK_CALL, NUR_ENV_NUR_TASK_NAME, NUR_ENV_NUR_VERSION, NUR_ENV_NU_LIB_DIRS,
     NUR_NAME, NUR_VAR_CONFIG_DIR, NUR_VAR_DEFAULT_LIB_DIR, NUR_VAR_PROJECT_PATH, NUR_VAR_RUN_PATH,
-    NUR_VAR_TASK_NAME, NUSHELL_FOLDER,
+    NUR_VAR_TASK_NAME,
 };
 use crate::nu_version::NU_VERSION;
 use crate::scripts::{get_default_nur_config, get_default_nur_env};
@@ -312,8 +312,8 @@ impl NurEngine {
         // Merge env is requested
         if merge_env {
             match self.engine_state.cwd(Some(&self.stack)) {
-                Ok(cwd) => {
-                    if let Err(e) = self.engine_state.merge_env(&mut self.stack, cwd) {
+                Ok(_cwd) => {
+                    if let Err(e) = self.engine_state.merge_env(&mut self.stack) {
                         report_shell_error(&self.engine_state, &e);
                     }
                 }
@@ -412,7 +412,6 @@ impl NurEngine {
         match evaluate_repl(
             &mut self.engine_state,
             self.stack.clone(),
-            NUSHELL_FOLDER,
             None,
             None,
             std::time::Instant::now(),

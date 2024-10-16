@@ -1,6 +1,27 @@
 use crate::names::NUR_FILE;
 use std::path::{Path, PathBuf};
 
+/// Get the directory where the Nushell executable is located.
+fn current_exe_directory() -> PathBuf {
+    let mut path = std::env::current_exe().expect("current_exe() should succeed");
+    path.pop();
+    path
+}
+
+/// Get the current working directory from the environment.
+pub(crate) fn current_dir_from_environment() -> PathBuf {
+    if let Ok(cwd) = std::env::current_dir() {
+        return cwd;
+    }
+    if let Ok(cwd) = std::env::var("PWD") {
+        return cwd.into();
+    }
+    if let Some(home) = nu_path::home_dir() {
+        return home.into_std_path_buf();
+    }
+    current_exe_directory()
+}
+
 pub(crate) fn find_project_path<P: AsRef<Path>>(cwd: P) -> Option<PathBuf> {
     let mut path = cwd.as_ref();
 

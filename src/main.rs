@@ -14,17 +14,17 @@ use crate::compat::show_nurscripts_hint;
 use crate::engine::init_engine_state;
 use crate::engine::NurEngine;
 use crate::errors::NurError;
+use crate::path::current_dir_from_environment;
 use crate::state::NurState;
 use miette::Result;
 use nu_ansi_term::Color;
-use nu_cmd_base::util::get_init_cwd;
 use nu_protocol::{ByteStream, PipelineData, Span};
 use std::env;
 use std::process::ExitCode;
 
 fn main() -> Result<ExitCode, miette::ErrReport> {
     // Initialise nur state
-    let run_path = get_init_cwd().into_std_path_buf();
+    let run_path = current_dir_from_environment();
     let nur_state = NurState::new(run_path, env::args().collect())?;
 
     // Create raw nu engine state

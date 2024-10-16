@@ -27,6 +27,7 @@ nu-utils = "0.99.0"
 thiserror = "1.0.59"
 miette = { version = "7.2", features = ["fancy-no-backtrace", "fancy"] }
 nu-ansi-term = "0.50.1"
+nu-path = "0.99.0"
 
 [target.'cfg(not(target_os = "windows"))'.dependencies]
 openssl = { version = "0.10", features = ["vendored"], optional = true }
