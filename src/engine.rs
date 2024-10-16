@@ -271,7 +271,6 @@ impl NurEngine {
         } else {
             if let Some(err) = working_set.parse_errors.first() {
                 report_parse_error(&working_set, err);
-                std::process::exit(1);
             }
 
             Err(NurError::ParseErrors(working_set.parse_errors))
@@ -468,17 +467,6 @@ mod tests {
     }
 
     #[test]
-    fn test_init_engine_state_will_add_std_lib() {
-        let temp_dir = tempdir().unwrap();
-        let temp_dir_path = temp_dir.path().to_path_buf();
-        let engine_state = init_engine_state(&temp_dir_path).unwrap();
-
-        assert!(engine_state
-            .find_module("std".as_bytes(), &[vec![]],)
-            .is_some());
-    }
-
-    #[test]
     fn test_init_engine_state_will_set_flags() {
         let temp_dir = tempdir().unwrap();
         let temp_dir_path = temp_dir.path().to_path_buf();
@@ -533,6 +521,16 @@ mod tests {
             .unwrap();
 
         nur_engine.stack.get_var(*var_id, Span::unknown()).is_ok()
+    }
+
+    #[test]
+    fn test_nur_engine_will_include_std_lib() {
+        let temp_dir = tempdir().unwrap();
+        let mut nur_engine = _prepare_nur_engine(&temp_dir);
+
+        assert!(nur_engine.eval("use std", PipelineData::empty()).is_ok());
+
+        _cleanup_nur_engine(&temp_dir);
     }
 
     #[test]

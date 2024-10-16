@@ -18,7 +18,7 @@ pub enum NurError {
     #[diagnostic()]
     ShellError(#[from] ShellError),
 
-    #[error("Parse Error {0:?}")]
+    #[error("Parse Errors")]
     #[diagnostic()]
     ParseErrors(#[related] Vec<ParseError>),
 
