@@ -1,7 +1,7 @@
 [package]
 name = "nur"
 description = "nur - a taskrunner based on nu shell"
-version = "0.11.1"
+version = "0.12.0"
 rust-version = "1.79.0"
 edition = "2021"
 license = "MIT"
@@ -9,7 +9,7 @@ homepage = "https://nur-taskrunner.github.io/docs/"
 repository = "https://github.com/nur-taskrunner/nur"
 readme = "README.md"
 authors = ["David Danier <david.danier@gmail.com>"]
-keywords = ["nu", "taskrunner", "development", "command-line"]
+keywords = ["nu", "taskrunner", "development", "command-line", "utility"]
 categories = ["command-line-utilities", "development-tools"]
 
 [dependencies]
