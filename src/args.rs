@@ -2,8 +2,8 @@ use crate::commands::Nur;
 use crate::errors::{NurError, NurResult};
 use crate::names::NUR_NAME;
 use nu_engine::{get_full_help, CallExt};
+use nu_parser::escape_for_script_arg;
 use nu_parser::parse;
-use nu_parser::{escape_for_script_arg, escape_quote_string};
 use nu_protocol::ast::Expression;
 use nu_protocol::{
     ast::Expr,
@@ -11,6 +11,7 @@ use nu_protocol::{
     ShellError,
 };
 use nu_protocol::{report_parse_error, Spanned};
+use nu_utils::escape_quote_string;
 use nu_utils::stdout_write_all_and_flush;
 
 pub(crate) fn is_safe_taskname(name: &str) -> bool {
