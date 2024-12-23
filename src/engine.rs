@@ -324,7 +324,7 @@ impl NurEngine {
 
         // Print result is requested
         let exit_details = if print {
-            result.print(&self.engine_state, &mut self.stack, false, false)
+            result.print_table(&self.engine_state, &mut self.stack, false, false)
         } else {
             result.drain()
         };

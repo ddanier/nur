@@ -14,7 +14,6 @@ categories = ["command-line-utilities", "development-tools"]
 
 [dependencies]
 nu-cli = "0.101.0"
-nu-cmd-base = "0.101.0"
 nu-cmd-extra = "0.101.0"
 nu-cmd-lang = "0.101.0"
 nu-command = "0.101.0"
@@ -24,7 +23,7 @@ nu-parser = "0.101.0"
 nu-protocol = "0.101.0"
 nu-std = "0.101.0"
 nu-utils = "0.101.0"
-thiserror = "1.0.69"
+thiserror = "2.0.9"
 miette = { version = "7.3", features = ["fancy-no-backtrace", "fancy"] }
 nu-ansi-term = "0.50.1"
 nu-path = "0.101.0"
@@ -38,7 +37,7 @@ static-link-openssl = ["dep:openssl", "nu-cmd-lang/static-link-openssl"]
 debug = []
 
 [dev-dependencies]
-tempfile = "3.10.1"
+tempfile = "3.14.0"
 
 [profile.release]
 opt-level = "s"     # Optimize for size
