@@ -73,16 +73,16 @@ def --wrapped "nur lint" [
 
 # Run all QA tasks
 def "nur qa" [] {
+    print "Running clippy linter"
+    nur lint
+    print "Running cargo check"
+    nur cargo check
     print "Running rust tests"
     nur test
     print "Running nur tests"
     nur test-nur
     print "Running feature tests"
     nur test-features
-    print "Running clippy linter"
-    nur lint
-    print "Running cargo check"
-    nur cargo check
     print "Running cargo fmt"
     nur cargo fmt
 }

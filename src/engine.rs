@@ -14,8 +14,8 @@ use nu_engine::get_full_help;
 use nu_protocol::ast::Block;
 use nu_protocol::engine::{Command, Stack, StateWorkingSet};
 use nu_protocol::{
-    engine::EngineState, report_parse_error, report_shell_error, PipelineData, Record, ShellError,
-    Span, Type, Value,
+    engine::EngineState, record, report_parse_error, report_shell_error, Config, IntoValue,
+    PipelineData, Record, ShellError, Span, Type, Value,
 };
 use nu_std::load_standard_library;
 use nu_utils::stdout_write_all_and_flush;
@@ -34,6 +34,16 @@ pub(crate) fn init_engine_state<P: AsRef<Path>>(project_path: P) -> NurResult<En
 
     // Prepare engine state to be changed
     let mut engine_state = engine_state;
+
+    // Setup default config
+    engine_state.add_env_var(
+        "config".into(),
+        Config::default().into_value(Span::unknown()),
+    );
+    engine_state.add_env_var(
+        "ENV_CONVERSIONS".to_string(),
+        Value::test_record(record! {}),
+    );
 
     // First, set up env vars as strings only
     gather_parent_env_vars(&mut engine_state, project_path.as_ref());
